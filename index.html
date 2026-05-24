@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Discipline Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="noise-overlay"></div>
+  <div class="grid-bg"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">DISCIPLINE</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="tracker" onclick="switchTab('tracker', this)">
+        <i class="fa-solid fa-table-cells"></i>
+        <span>Tracker</span>
+      </button>
+      <button class="nav-item" data-tab="tasks" onclick="switchTab('tasks', this)">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Daily Tasks</span>
+      </button>
+      <button class="nav-item" data-tab="stats" onclick="switchTab('stats', this)">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analytics</span>
+      </button>
+      <button class="nav-item" data-tab="settings" onclick="switchTab('settings', this)">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-streak" id="sidebar-streak">
+        <span class="streak-fire">🔥</span>
+        <div>
+          <div class="streak-num" id="streak-num">0</div>
+          <div class="streak-lbl">day streak</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-bar">
+      <div class="top-left">
+        <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="page-title" id="page-title">Weekly Tracker</div>
+      </div>
+      <div class="week-controls">
+        <button class="week-btn" onclick="changeWeek(-1)" aria-label="Previous week">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="week-range" id="week-range"></div>
+        <button class="week-btn" onclick="changeWeek(1)" aria-label="Next week">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <button class="today-btn" onclick="goToday()">TODAY</button>
+      </div>
+      <button class="export-btn" onclick="exportCSV()" title="Export CSV">
+        <i class="fa-solid fa-download"></i>
+        <span>Export</span>
+      </button>
+    </header>
+
+    <div class="quote-ticker" id="quote-ticker"></div>
+
+    <!-- TRACKER TAB -->
+    <section class="tab-content active" id="tab-tracker">
+      <div class="score-strip" id="score-strip"></div>
+      <div class="grid-container">
+        <div class="grid-scroll-hint"><i class="fa-solid fa-arrow-right"></i> Scroll to see all days</div>
+        <div class="table-wrap">
+          <table class="habit-table" id="habit-table"></table>
+        </div>
+      </div>
+      <div class="legend-bar">
+        <span class="legend-item"><span class="leg-dot green"></span>Done — Full points</span>
+        <span class="legend-item"><span class="leg-dot amber"></span>Partial — Half points</span>
+        <span class="legend-item"><span class="leg-dot red"></span>Skipped — 0 points</span>
+        <span class="legend-item"><span class="leg-dot none"></span>Not marked</span>
+        <span class="legend-hint">Click any cell to cycle status</span>
+      </div>
+    </section>
+
+    <!-- TASKS TAB -->
+    <section class="tab-content" id="tab-tasks">
+      <div class="tasks-header">
+        <h2 class="section-heading">5 Daily Achieve Tasks</h2>
+        <p class="section-sub">Track your 5 most important tasks for each day this week</p>
+      </div>
+      <div class="tasks-week-grid" id="tasks-week-grid"></div>
+      <div class="notes-section">
+        <h3 class="section-heading" style="font-size:1rem;margin-bottom:1rem">Daily Journal Notes</h3>
+        <div class="notes-grid" id="notes-grid"></div>
+      </div>
+    </section>
+
+    <!-- STATS TAB -->
+    <section class="tab-content" id="tab-stats">
+      <div class="stats-top-cards" id="stats-top-cards"></div>
+      <div class="charts-row">
+        <div class="chart-card" style="flex:2">
+          <div class="chart-card-title">Weekly Performance (Last 8 Weeks)</div>
+          <canvas id="line-chart" height="180"></canvas>
+        </div>
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-title">This Week Breakdown</div>
+          <canvas id="doughnut-chart" height="180"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-top:16px">
+        <div class="chart-card-title">Habit Completion Rate — Last 30 Days</div>
+        <canvas id="bar-chart" height="160"></canvas>
+      </div>
+      <div class="chart-card" style="margin-top:16px">
+        <div class="chart-card-title">90-Day Activity Heatmap</div>
+        <div class="heatmap-container" id="heatmap-container"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section class="tab-content" id="tab-settings">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="settings-card-title"><i class="fa-solid fa-list"></i> Manage Habits</div>
+          <div id="habits-edit-list"></div>
+          <div class="add-habit-form">
+            <input class="s-input" id="new-habit-name" placeholder="New habit name..." />
+            <input class="s-input pts-input" id="new-habit-pts" type="number" placeholder="Pts" value="3" min="1" max="10" />
+            <button class="s-btn primary" onclick="addHabit()"><i class="fa-solid fa-plus"></i> Add Habit</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title"><i class="fa-solid fa-database"></i> Data Management</div>
+          <div class="data-actions">
+            <button class="s-btn primary" onclick="exportCSV()"><i class="fa-solid fa-file-csv"></i> Export This Week CSV</button>
+            <button class="s-btn primary" onclick="exportAllCSV()"><i class="fa-solid fa-file-export"></i> Export All Data CSV</button>
+            <button class="s-btn danger" onclick="resetWeek()"><i class="fa-solid fa-rotate-left"></i> Reset This Week</button>
+            <button class="s-btn danger" onclick="clearAllData()"><i class="fa-solid fa-trash"></i> Clear All Data</button>
+          </div>
+          <div class="data-info" id="data-info"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
