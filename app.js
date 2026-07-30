@@ -1,46 +1,49 @@
 /* =====================================================
 Daily Discipline Tracker — app.js (FINAL COMPLETE VERSION)
 All Features: Tracker, Tasks, Calendar, Analytics,
-              Achievements, XP/Level, AI Coach, Patterns,
-              Weekly Reports, Social Share, Theme, Sound,
-              Notifications, Focus Mode, Cell Notes, Import CSV
+Achievements, XP/Level, AI Coach, Patterns,
+Weekly Reports, Social Share, Theme, Sound,
+Notifications, Focus Mode, Cell Notes, Import CSV,
+Leaderboard with Fake Competitors
 ===================================================== */
 
 // ── DEFAULT DATA ──────────────────────────────────────
 const DEFAULT_HABITS = [
-  { id: 1, name: "10PM–05AM Sleep + Drink 4L Water", pts: 5 },
-  { id: 2, name: "Diet — No Junk Food",              pts: 3 },
-  { id: 3, name: "Exercise & Meditation",             pts: 5 },
-  { id: 4, name: "Only 1hr Phone (except education)", pts: 4 },
-  { id: 5, name: "5 Achieve Tasks",                   pts: 5 },
-  { id: 6, name: "Follow Time Table",                 pts: 3 },
-  { id: 7, name: "Spend 5 Hours with AI",             pts: 3 }
+  { id: 1, name: "10PM–05AM Sleep + Drink 4L Water ", pts: 5 },
+  { id: 2, name: "Diet — No Junk Food ",              pts: 3 },
+  { id: 3, name: "Exercise  & Meditation ",             pts: 5 },
+  { id: 4, name: "Only 1hr Phone (except education) ", pts: 4 },
+  { id: 5, name: "5 Achieve Tasks ",                   pts: 5 },
+  { id: 6, name: "Follow Time Table ",                 pts: 3 },
+  { id: 7, name: "Spend 5 Hours with AI ",             pts: 3 }
 ];
+
 const QUOTES = [
-  "Discipline is the bridge between goals and accomplishment.",
-  "Small daily improvements are the key to staggering long-term results.",
-  "You don't rise to your goals, you fall to your systems.",
-  "Every action you take is a vote for the person you wish to become.",
-  "The secret of getting ahead is getting started.",
-  "Success is the sum of small efforts repeated day in and day out.",
-  "Motivation gets you started. Habit keeps you going.",
-  "Do not wait for the perfect moment — make the moment perfect.",
-  "Hard work beats talent when talent doesn't work hard.",
-  "Be consistent. Results will follow.",
-  "One day or day one — you decide.",
-  "Push yourself because no one else is going to do it for you.",
-  "Great things never come from comfort zones.",
-  "The pain of discipline is far less than the pain of regret.",
-  "Winners are not people who never fail, but people who never quit.",
-  "Wake up with determination. Go to bed with satisfaction.",
-  "What you do today can improve all your tomorrows.",
-  "First master the fundamentals, then worry about everything else.",
-  "Believe in yourself and all that you are.",
-  "Your future is created by what you do today, not tomorrow."
+  "Discipline is the bridge between goals and accomplishment. ",
+  "Small daily improvements are the key to staggering long-term results. ",
+  "You don't rise to your goals, you fall to your systems. ",
+  "Every action you take is a vote for the person you wish to become. ",
+  "The secret of getting ahead is getting started. ",
+  "Success is the sum of small efforts repeated day in and day out. ",
+  "Motivation gets you started. Habit keeps you going. ",
+  "Do not wait for the perfect moment — make the moment perfect. ",
+  "Hard work beats talent when talent doesn't work hard. ",
+  "Be consistent. Results will follow. ",
+  "One day or day one — you decide. ",
+  "Push yourself because no one else is going to do it for you. ",
+  "Great things never come from comfort zones. ",
+  "The pain of discipline is far less than the pain of regret. ",
+  "Winners are not people who never fail, but people who never quit. ",
+  "Wake up with determination. Go to bed with satisfaction. ",
+  "What you do today can improve all your tomorrows. ",
+  "First master the fundamentals, then worry about everything else. ",
+  "Believe in yourself and all that you are. ",
+  "Your future is created by what you do today, not tomorrow. "
 ];
+
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAY_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const STATUS_CYCLE = ['none','green','amber','red'];
+const STATUS_CYCLE =  ['none','green','amber','red'];
 const STATUS_ICONS = { none:'·', green:'✓', amber:'~', red:'✗' };
 
 // ── LEVELS & BADGES ───────────────────────────────────
@@ -53,9 +56,10 @@ const LEVELS = [
   { lvl: 6, name: 'Master',      xp: 10000 },
   { lvl: 7, name: 'Legend',      xp: 25000 }
 ];
+
 const BADGES = [
-  { id: 'first_day',   icon: '🌱', name: 'First Step',       desc: 'Track your first habit' },
-  { id: 'first_week',  icon: '🏆', name: 'First Week',       desc: 'Track 7 different days' },
+  { id: 'first_day',   icon: '', name: 'First Step',       desc: 'Track your first habit' },
+  { id: 'first_week',  icon: '', name: 'First Week',       desc: 'Track 7 different days' },
   { id: 'perfect_day', icon: '💯', name: 'Perfectionist',    desc: 'Get 100% score on any day' },
   { id: 'century',     icon: '🎯', name: 'Century',          desc: 'Earn 100 green cells' },
   { id: 'streak_7',    icon: '🔥', name: 'Week Warrior',     desc: '7-day streak' },
@@ -65,6 +69,23 @@ const BADGES = [
   { id: 'streak_100',  icon: '👑', name: 'Centurion',        desc: '100-day streak' },
   { id: 'comeback',    icon: '🦅', name: 'Comeback Kid',     desc: 'Recover after a broken streak' }
 ];
+
+// ── LEADERBOARD DATA ──────────────────────────────────
+const FAKE_NAMES = [
+  "Discipline King", "Habit Master", "Consistency Pro", "Morning Warrior",
+  "Focus Champion", "Goal Crusher", "Streak Legend", "Productivity Guru",
+  "Early Riser", "Task Terminator", "Mindful Achiever", "Fitness Freak",
+  "Study Beast", "Work Hustler", "Life Optimizer", "Success Seeker",
+  "Dream Chaser", "Action Taker", "Progress Maker", "Winner Mindset",
+  "Elite Performer", "Peak Achiever", "Daily Grinder", "Habit Hero",
+  "Focus Master", "Time Warrior", "Goal Getter", "Rise & Grind",
+  "No Excuses", "Beast Mode", "Grind Never Stops", "Champion Mindset"
+];
+
+const AVATAR_EMOJIS = ["", "🐅", "🐺", "🐻", "", "🦄", "", "⚡", "", "💎", "👑", "🚀", "⭐", "🌟", "💫"];
+
+let fakeCompetitors = [];
+let currentLeaderboardPeriod = 'weekly';
 
 // ── STATE ─────────────────────────────────────────────
 let habits          = load('ddt_habits', DEFAULT_HABITS);
@@ -91,6 +112,7 @@ function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch { return fallback; }
 }
+
 function save(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
 }
@@ -107,15 +129,17 @@ function getWeekDates(offset = 0) {
     return d;
   });
 }
+
 function isoDate(d)  { return d.toISOString().split('T')[0]; }
 function isToday(d)  { return isoDate(d) === isoDate(new Date()); }
 function fmtShort(d) { return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); }
 function fmtLong(d)  { return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-// ── STATUS HELPERS ────────────────────────────────────
+// ── STATUS HELPERS ───────────────────────────────────
 function getStatus(habitId, date) {
   return cellData[`${isoDate(date)}_${habitId}`] || 'none';
 }
+
 function cycleStatus(habitId, dateStr) {
   const key = `${dateStr}_${habitId}`;
   const cur  = cellData[key] || 'none';
@@ -137,10 +161,12 @@ function cycleStatus(habitId, dateStr) {
 
 // ── SOUND EFFECTS (Web Audio API) ─────────────────────
 let audioCtx = null;
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
+
 function playToggleSound(status) {
   try {
     const ctx = getAudioCtx();
@@ -157,6 +183,7 @@ function playToggleSound(status) {
     osc.stop(ctx.currentTime + 0.15);
   } catch (e) {}
 }
+
 function toggleSound() {
   soundEnabled = !soundEnabled;
   save('ddt_sound', soundEnabled);
@@ -168,17 +195,19 @@ function toggleSound() {
   else showToast('🔇 Sounds muted');
 }
 
-// ── THEME TOGGLE ──────────────────────────────────────
+// ── THEME TOGGLE ─────────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const icon = document.getElementById('theme-icon');
   icon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
   save('ddt_theme', theme);
 }
+
 function toggleTheme() {
   const cur = document.documentElement.getAttribute('data-theme') || 'dark';
   applyTheme(cur === 'dark' ? 'light' : 'dark');
 }
+
 function initTheme() {
   const saved = load('ddt_theme', null);
   if (saved) applyTheme(saved);
@@ -210,6 +239,7 @@ function toggleNotifications() {
     showToast('🔕 Notifications disabled');
   }
 }
+
 function updateNotifUI() {
   const icon = document.getElementById('notif-icon');
   const btn = document.getElementById('notif-btn');
@@ -221,6 +251,7 @@ function updateNotifUI() {
     btn.classList.remove('active');
   }
 }
+
 function scheduleDailyReminder() {
   setInterval(() => {
     if (!notifEnabled) return;
@@ -248,6 +279,7 @@ function triggerConfetti() {
 
 // ── TOAST ─────────────────────────────────────────────
 let toastTimer = null;
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -261,10 +293,10 @@ function toggleFocusMode() {
   focusMode = !focusMode;
   document.body.classList.toggle('focus-mode', focusMode);
   document.getElementById('focus-btn').classList.toggle('active', focusMode);
-  showToast(focusMode ? '🎯 Focus Mode ON — Today only' : '📊 Full week view');
+  showToast(focusMode ? ' Focus Mode ON — Today only' : '📊 Full week view');
 }
 
-// ── CELL NOTES (right-click) ──────────────────────────
+// ── CELL NOTES (right-click) ─────────────────────────
 function openCellNote(habitId, dateStr) {
   currentNoteKey = `${dateStr}_${habitId}`;
   const habit = habits.find(h => h.id == habitId);
@@ -274,10 +306,12 @@ function openCellNote(habitId, dateStr) {
   document.getElementById('note-popup').classList.add('open');
   setTimeout(() => document.getElementById('note-popup-text').focus(), 100);
 }
+
 function closeNotePopup() {
   document.getElementById('note-popup').classList.remove('open');
   currentNoteKey = null;
 }
+
 function saveCellNote() {
   if (!currentNoteKey) return;
   const val = document.getElementById('note-popup-text').value.trim();
@@ -288,6 +322,7 @@ function saveCellNote() {
   renderAll();
   showToast('📝 Note saved');
 }
+
 function deleteCellNote() {
   if (!currentNoteKey) return;
   delete cellNotes[currentNoteKey];
@@ -310,6 +345,7 @@ function dayStats(date) {
   const pct = total > 0 ? Math.round(earned / total * 100) : 0;
   return { g, a, r, pct, earned, total };
 }
+
 function weekStats(dates) {
   let tg=0, ta=0, tr=0, earned=0, total=0;
   dates.forEach(d => {
@@ -320,6 +356,7 @@ function weekStats(dates) {
   const pct = total > 0 ? Math.round(earned / total * 100) : 0;
   return { tg, ta, tr, pct };
 }
+
 function calcStreak() {
   let streak = 0, max = 0, cur = 0;
   const today = new Date();
@@ -338,7 +375,7 @@ function calcStreak() {
   return { streak, max };
 }
 
-// ── XP & LEVEL ────────────────────────────────────────
+// ── XP & LEVEL ───────────────────────────────────────
 function calculateXP() {
   let xp = 0;
   Object.values(cellData).forEach(v => {
@@ -347,6 +384,7 @@ function calculateXP() {
   });
   return xp;
 }
+
 function getLevelInfo(xp) {
   let current = LEVELS[0], next = LEVELS[1];
   for (let i = LEVELS.length - 1; i >= 0; i--) {
@@ -359,13 +397,14 @@ function getLevelInfo(xp) {
   const progress = next ? ((xp - current.xp) / (next.xp - current.xp)) * 100 : 100;
   return { current, next, progress };
 }
+
 function renderXPWidget() {
   const xp = calculateXP();
   const { current, next, progress } = getLevelInfo(xp);
   document.getElementById('xp-level-badge').textContent = `Lv.${current.lvl}`;
   document.getElementById('xp-level-name').textContent = current.name;
   document.getElementById('xp-current').textContent = xp;
-  document.getElementById('xp-next').textContent = next ? next.xp : '∞';
+  document.getElementById('xp-next').textContent = next ? next.xp : '';
   document.getElementById('xp-total').textContent = xp;
   document.getElementById('xp-bar-fill').style.width = Math.min(100, progress) + '%';
 }
@@ -376,26 +415,26 @@ function checkAchievements() {
   const allKeys = Object.keys(cellData);
   const uniqueDays = new Set(allKeys.map(k => k.split('_')[0])).size;
   const greenCount = Object.values(cellData).filter(v => v === 'green').length;
-
+  
   let hasPerfectDay = false;
   for (let i = 0; i < 90; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
     if (dayStats(d).pct === 100) { hasPerfectDay = true; break; }
   }
-
+  
   const checks = {
-    'first_day':   allKeys.length >= 1,
-    'first_week':  uniqueDays >= 7,
+    'first_day':   allKeys.length  >= 1,
+    'first_week':  uniqueDays  >= 7,
     'perfect_day': hasPerfectDay,
-    'century':     greenCount >= 100,
-    'streak_7':    streak >= 7 || max >= 7,
-    'streak_14':   streak >= 14 || max >= 14,
-    'streak_30':   streak >= 30 || max >= 30,
-    'streak_60':   streak >= 60 || max >= 60,
-    'streak_100':  streak >= 100 || max >= 100,
-    'comeback':    hadBrokenStreak && streak >= 3
+    'century':     greenCount  >= 100,
+    'streak_7':    streak  >= 7 || max  >= 7,
+    'streak_14':   streak  >= 14 || max  >= 14,
+    'streak_30':   streak  >= 30 || max  >= 30,
+    'streak_60':   streak  >= 60 || max  >= 60,
+    'streak_100':  streak  >= 100 || max  >= 100,
+    'comeback':    hadBrokenStreak && streak  >= 3
   };
-
+  
   if (streak === 0 && uniqueDays >= 2) {
     const today = new Date();
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
@@ -410,7 +449,7 @@ function checkAchievements() {
       }
     }
   }
-
+  
   let newlyUnlocked = [];
   BADGES.forEach(b => {
     if (!unlockedBadges.includes(b.id) && checks[b.id]) {
@@ -418,7 +457,7 @@ function checkAchievements() {
       newlyUnlocked.push(b);
     }
   });
-
+  
   if (newlyUnlocked.length > 0) {
     save('ddt_badges', unlockedBadges);
     showAchPopup(newlyUnlocked[0]);
@@ -455,12 +494,15 @@ function showAchPopup(badge) {
   document.getElementById('ach-popup-desc').textContent = badge.desc;
   document.getElementById('ach-popup').classList.add('show');
 }
+
 function closeAchPopup() { document.getElementById('ach-popup').classList.remove('show'); }
+
 function showLevelUpPopup(level) {
   document.getElementById('levelup-num').textContent = `Lv.${level.lvl}`;
   document.getElementById('levelup-name').textContent = level.name;
   document.getElementById('levelup-popup').classList.add('show');
 }
+
 function closeLevelUpPopup() { document.getElementById('levelup-popup').classList.remove('show'); }
 
 function renderAchievements() {
@@ -474,16 +516,171 @@ function renderAchievements() {
       <div class="ach-status">${unlocked ? '✓ UNLOCKED' : '🔒 LOCKED'}</div>
     </div>`;
   }).join('');
+  
   document.getElementById('ach-progress-label').textContent =
     `${unlockedBadges.length} / ${BADGES.length} unlocked`;
+}
+
+// ── LEADERBOARD & FAKE COMPETITORS ───────────────────
+function generateFakeCompetitors() {
+  const competitors = [];
+  const userXP = calculateXP();
+  const userStreak = calcStreak().streak;
+  
+  // Create 30-50 fake competitors
+  const numCompetitors = 30 + Math.floor(Math.random() * 20);
+  
+  for (let i = 0; i < numCompetitors; i++) {
+    const name = FAKE_NAMES[i % FAKE_NAMES.length] + (i >= FAKE_NAMES.length ? ` ${Math.floor(i/FAKE_NAMES.length)+1}` : '');
+    const baseXP = Math.floor(Math.random() * 8000) + 500;
+    const streak = Math.floor(Math.random() * 100) + 1;
+    const trend = Math.random() > 0.5 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down';
+    
+    competitors.push({
+      id: i + 1,
+      name: name,
+      xp: baseXP,
+      level: getLevelInfo(baseXP).current.lvl,
+      streak: streak,
+      trend: trend,
+      isFake: true,
+      avatar: AVATAR_EMOJIS[i % AVATAR_EMOJIS.length]
+    });
+  }
+  
+  // Add current user
+  competitors.push({
+    id: 999,
+    name: "You",
+    xp: userXP,
+    level: getLevelInfo(userXP).current.lvl,
+    streak: userStreak,
+    trend: 'up',
+    isFake: false,
+    avatar: "👤"
+  });
+  
+  // Sort by XP
+  competitors.sort((a, b) => b.xp - a.xp);
+  
+  // Assign ranks
+  competitors.forEach((c, index) => {
+    c.rank = index + 1;
+  });
+  
+  return competitors;
+}
+
+function getLeaderboardData() {
+  const allCompetitors = generateFakeCompetitors();
+  
+  // Filter based on period (simplified - in real app would use different XP calculations)
+  if (currentLeaderboardPeriod === 'weekly') {
+    // For weekly, reduce XP by ~70%
+    allCompetitors.forEach(c => {
+      if (c.isFake) c.displayXP = Math.floor(c.xp * 0.3);
+      else c.displayXP = c.xp;
+    });
+  } else if (currentLeaderboardPeriod === 'monthly') {
+    // For monthly, reduce XP by ~40%
+    allCompetitors.forEach(c => {
+      if (c.isFake) c.displayXP = Math.floor(c.xp * 0.6);
+      else c.displayXP = c.xp;
+    });
+  } else {
+    // All time
+    allCompetitors.forEach(c => c.displayXP = c.xp);
+  }
+  
+  // Re-sort based on display XP
+  allCompetitors.sort((a, b) => b.displayXP - a.displayXP);
+  
+  // Re-assign ranks
+  allCompetitors.forEach((c, index) => {
+    c.rank = index + 1;
+  });
+  
+  return allCompetitors;
+}
+
+function renderLeaderboard() {
+  const leaderboard = getLeaderboardData();
+  const listEl = document.getElementById('leaderboard-list');
+  const userRankEl = document.getElementById('user-rank');
+  const xpNeededEl = document.getElementById('xp-needed');
+  const totalCompetitorsEl = document.getElementById('total-competitors');
+  
+  if (!listEl) return;
+  
+  // Find user
+  const userIndex = leaderboard.findIndex(c => !c.isFake);
+  const user = leaderboard[userIndex];
+  
+  // Update rank info
+  if (user) {
+    userRankEl.textContent = `#${user.rank}`;
+    totalCompetitorsEl.textContent = leaderboard.length;
+    
+    // Calculate XP needed for top 10
+    if (user.rank > 10) {
+      const top10XP = leaderboard[9].displayXP;
+      const needed = top10XP - user.displayXP;
+      xpNeededEl.textContent = `${needed.toLocaleString()} XP`;
+    } else {
+      xpNeededEl.textContent = "✓ Top 10!";
+    }
+  }
+  
+  // Show top 20 + user if not in top 20
+  const displayList = user.rank <= 20 ? leaderboard.slice(0, 20) : [...leaderboard.slice(0, 19), user];
+  
+  listEl.innerHTML = displayList.map(c => {
+    const isCurrentUser = !c.isFake;
+    const rankClass = c.rank === 1 ? 'top-1' : c.rank <= 3 ? 'top-3' : '';
+    const trendIcon = c.trend === 'up' ? '↑' : c.trend === 'down' ? '↓' : '−';
+    const trendClass = c.trend === 'up' ? 'up' : c.trend === 'down' ? 'down' : '';
+    
+    return `
+      <div class="lb-item ${isCurrentUser ? 'current-user' : ''}">
+        <div class="lb-rank ${rankClass}">${c.rank}</div>
+        <div class="lb-avatar">${c.avatar}</div>
+        <div class="lb-info">
+          <div class="lb-name">${c.name} ${isCurrentUser ? '(You)' : ''}</div>
+          <div class="lb-level">Level ${c.level} • ${c.streak} day streak</div>
+        </div>
+        <div class="lb-stats">
+          <div class="lb-streak">🔥 ${c.streak}</div>
+          <div class="lb-trend ${trendClass}">${trendIcon}</div>
+          <div class="lb-xp">${c.displayXP.toLocaleString()} XP</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setLeaderboardPeriod(period, btn) {
+  currentLeaderboardPeriod = period;
+  
+  // Update active button
+  document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  
+  renderLeaderboard();
+}
+
+function refreshLeaderboard() {
+  // Regenerate with slight variations
+  fakeCompetitors = [];
+  renderLeaderboard();
+  showToast('🏆 Leaderboard refreshed!');
 }
 
 // ── PATTERN DETECTION ─────────────────────────────────
 function detectPatterns() {
   const insights = [];
   const today = new Date();
-
   const dowStats = Array.from({ length: 7 }, () => ({ total: 0, count: 0 }));
+  
   for (let i = 0; i < 30; i++) {
     const d = new Date(today); d.setDate(today.getDate() - i);
     const pct = dayStats(d).pct;
@@ -491,10 +688,11 @@ function detectPatterns() {
     dowStats[dow].total += pct;
     dowStats[dow].count++;
   }
+  
   const dowAvg = dowStats.map((s, i) => ({
     dow: i, avg: s.count > 0 ? Math.round(s.total / s.count) : 0
   })).filter(d => d.avg > 0);
-
+  
   if (dowAvg.length >= 3) {
     const best = dowAvg.reduce((a, b) => a.avg > b.avg ? a : b);
     const worst = dowAvg.reduce((a, b) => a.avg < b.avg ? a : b);
@@ -503,7 +701,7 @@ function detectPatterns() {
       insights.push({ type: worst.avg < 40 ? 'bad' : 'warn', icon: worst.avg < 40 ? '⚠️' : '💡', title: `You tend to skip ${DAY_FULL[worst.dow]}s`, desc: `Your ${DAY_FULL[worst.dow]} average is only ${worst.avg}%.` });
     }
   }
-
+  
   const habitStats = habits.map(h => {
     let g = 0, tot = 0;
     for (let i = 0; i < 30; i++) {
@@ -515,43 +713,44 @@ function detectPatterns() {
     }
     return { habit: h, pct: tot > 0 ? Math.round(g / tot * 100) : 0 };
   }).filter(h => h.pct > 0);
-
+  
   if (habitStats.length >= 2) {
     const bestH = habitStats.reduce((a, b) => a.pct > b.pct ? a : b);
     const worstH = habitStats.reduce((a, b) => a.pct < b.pct ? a : b);
     if (bestH.pct >= 60) insights.push({ type: 'good', icon: '⭐', title: `Strong habit: ${bestH.habit.name}`, desc: `${bestH.pct}% completion — keep it up!` });
     if (worstH.pct < 50 && worstH.pct < bestH.pct - 20) insights.push({ type: 'warn', icon: '🎯', title: `Struggling with: ${worstH.habit.name}`, desc: `Only ${worstH.pct}% completion.` });
   }
-
+  
   const { streak, max } = calcStreak();
-  if (streak >= 7) insights.push({ type: 'good', icon: '🔥', title: `${streak}-day streak going strong!`, desc: `Best ever: ${max} days.` });
+  if (streak >= 7) insights.push({ type: 'good', icon: '', title: `${streak}-day streak going strong!`, desc: `Best ever: ${max} days.` });
   else if (streak === 0 && max >= 3) insights.push({ type: 'warn', icon: '💪', title: 'Time to rebuild your streak', desc: `Your best was ${max} days.` });
-
+  
   return insights.slice(0, 5);
 }
 
 function renderPatterns() {
   const insights = detectPatterns();
   const grid = document.getElementById('pattern-grid');
+  
   if (insights.length === 0) {
     grid.innerHTML = `<div class="pattern-card"><div class="pattern-icon info">📊</div><div class="pattern-body"><div class="pattern-title">Not enough data yet</div><div class="pattern-desc">Track at least 7 days to see patterns.</div></div></div>`;
     return;
   }
-  grid.innerHTML = insights.map(ins => `
-    <div class="pattern-card">
-      <div class="pattern-icon ${ins.type}">${ins.icon}</div>
-      <div class="pattern-body">
-        <div class="pattern-title">${ins.title}</div>
-        <div class="pattern-desc">${ins.desc}</div>
-      </div>
-    </div>`).join('');
+  
+  grid.innerHTML = insights.map(ins => `<div class="pattern-card">
+    <div class="pattern-icon ${ins.type}">${ins.icon}</div>
+    <div class="pattern-body">
+      <div class="pattern-title">${ins.title}</div>
+      <div class="pattern-desc">${ins.desc}</div>
+    </div>
+  </div>`).join('');
 }
 
-// ── 🤖 AI COACH ───────────────────────────────────────
+// ──  AI COACH ───────────────────────────────────────
 function generateAIInsights() {
   const insights = [];
   const today = new Date();
-
+  
   habits.forEach(h => {
     const weeks = [0, 0, 0];
     for (let w = 0; w < 3; w++) {
@@ -566,7 +765,7 @@ function generateAIInsights() {
       }
       weeks[w] = tot > 0 ? Math.round(g / tot * 100) : -1;
     }
-
+    
     if (weeks[0] >= 0 && weeks[2] >= 0) {
       const drop = weeks[2] - weeks[0];
       if (drop >= 30 && weeks[0] < 50) {
@@ -578,14 +777,14 @@ function generateAIInsights() {
         });
       } else if (drop <= -30 && weeks[0] >= 70) {
         insights.push({
-          priority: 'low', icon: '📈',
+          priority: 'low', icon: '',
           title: `${h.name} is improving!`,
           desc: `Rose from ${weeks[2]}% → ${weeks[0]}% — great momentum!`,
           tip: `💡 Consistency beats intensity. Keep the streak going.`
         });
       }
     }
-
+    
     if (weeks[0] === 0 && weeks[1] === 0 && weeks[2] === 0) {
       insights.push({
         priority: 'high', icon: '⚠️',
@@ -595,7 +794,7 @@ function generateAIInsights() {
       });
     }
   });
-
+  
   const { streak, max } = calcStreak();
   if (streak >= 3 && streak < 7) {
     insights.push({
@@ -612,7 +811,7 @@ function generateAIInsights() {
       tip: `💡 21 days forms a habit. You're 1/3 there!`
     });
   }
-
+  
   const thisWeek = weekStats(getWeekDates(0));
   const lastWeek = weekStats(getWeekDates(-1));
   if (lastWeek.pct > 0 && thisWeek.pct > 0) {
@@ -633,7 +832,7 @@ function generateAIInsights() {
       });
     }
   }
-
+  
   if (habits.length >= 3) {
     let togetherCount = 0, totalDays = 0;
     for (let i = 0; i < 14; i++) {
@@ -651,7 +850,7 @@ function generateAIInsights() {
       });
     }
   }
-
+  
   let weekend = { t: 0, c: 0 }, weekday = { t: 0, c: 0 };
   for (let i = 0; i < 30; i++) {
     const d = new Date(today); d.setDate(today.getDate() - i);
@@ -675,7 +874,7 @@ function generateAIInsights() {
       });
     }
   }
-
+  
   const allKeys = Object.keys(cellData);
   const totalMarked = allKeys.filter(k => cellData[k] !== 'none').length;
   if (totalMarked >= 100) {
@@ -693,11 +892,11 @@ function generateAIInsights() {
         priority: 'high', icon: '🎯',
         title: `Overall consistency needs work`,
         desc: `${overallPct}% all-time green rate. Let's rebuild.`,
-        tip: `💡 Pick just ONE habit to focus on this week. Small wins compound.`
+        tip: `💡 Pick just ONE habit to focus on next week. Small wins compound.`
       });
     }
   }
-
+  
   const order = { high: 0, med: 1, low: 2, info: 3 };
   insights.sort((a, b) => order[a.priority] - order[b.priority]);
   return insights.slice(0, 8);
@@ -706,23 +905,24 @@ function generateAIInsights() {
 function renderAIInsights() {
   const insights = generateAIInsights();
   const grid = document.getElementById('ai-grid');
+  
   if (insights.length === 0) {
     grid.innerHTML = `<div class="ai-card priority-info"><div class="ai-icon">🤖</div><div class="ai-body"><div class="ai-title">AI Coach needs more data</div><div class="ai-desc">Track at least 2 weeks to unlock personalized coaching.</div></div></div>`;
     return;
   }
-  grid.innerHTML = insights.map(ins => `
-    <div class="ai-card priority-${ins.priority}">
-      <div class="ai-icon">${ins.icon}</div>
-      <div class="ai-body">
-        <div class="ai-title">
-          ${ins.title}
-          ${ins.priority === 'high' ? '<span class="ai-priority-tag high">URGENT</span>' : ''}
-          ${ins.priority === 'med' ? '<span class="ai-priority-tag med">NOTICE</span>' : ''}
-        </div>
-        <div class="ai-desc">${ins.desc}</div>
-        ${ins.tip ? `<div class="ai-tip">${ins.tip}</div>` : ''}
+  
+  grid.innerHTML = insights.map(ins => `<div class="ai-card priority-${ins.priority}">
+    <div class="ai-icon">${ins.icon}</div>
+    <div class="ai-body">
+      <div class="ai-title">
+        ${ins.title}
+        ${ins.priority === 'high' ? '<span class="ai-priority-tag high">URGENT</span>' : ''}
+        ${ins.priority === 'med' ? '<span class="ai-priority-tag med">NOTICE</span>' : ''}
       </div>
-    </div>`).join('');
+      <div class="ai-desc">${ins.desc}</div>
+      ${ins.tip ? `<div class="ai-tip">${ins.tip}</div>` : ''}
+    </div>
+  </div>`).join('');
 }
 
 // ── 📧 WEEKLY REPORT ──────────────────────────────────
@@ -733,7 +933,7 @@ function generateWeeklyReport(dates = null) {
   const xp = calculateXP();
   const { current } = getLevelInfo(xp);
   const period = `${fmtLong(dates[0])} → ${fmtLong(dates[6])}`;
-
+  
   const habitPerf = habits.map(h => {
     let g = 0, a = 0, r = 0;
     dates.forEach(d => {
@@ -745,23 +945,23 @@ function generateWeeklyReport(dates = null) {
     const pct = Math.round((g + a * 0.5) / 7 * 100);
     return { name: h.name, g, a, r, pct };
   });
-
+  
   const dayPcts = dates.map(d => ({ date: d, pct: dayStats(d).pct }));
   const bestDay = dayPcts.reduce((a, b) => a.pct > b.pct ? a : b);
   const worstDay = dayPcts.reduce((a, b) => a.pct < b.pct ? a : b);
   const sortedHabits = [...habitPerf].sort((a, b) => b.pct - a.pct);
   const bestHabit = sortedHabits[0];
   const worstHabit = sortedHabits[sortedHabits.length - 1];
-
+  
   let md = `# 📊 Weekly Discipline Report\n**${period}**\n\n`;
   md += `## 🎯 Overview\n| Metric | Value |\n|---|---|\n`;
-  md += `| Week Score | **${ws.pct}%** |\n| Green Cells | ${ws.tg} |\n| Amber Cells | ${ws.ta} |\n| Red Cells | ${ws.tr} |\n| Current Streak | 🔥 ${streak} days |\n| Best Streak | ${max} days |\n| Level | Lv.${current.lvl} ${current.name} |\n| Total XP | ${xp} |\n\n`;
+  md += `| Week Score | **${ws.pct}%** |\n| Green Cells | ${ws.tg} |\n| Amber Cells | ${ws.ta} |\n| Red Cells | ${ws.tr} |\n| Current Streak |  ${streak} days |\n| Best Streak | ${max} days |\n| Level | Lv.${current.lvl} ${current.name} |\n| Total XP | ${xp} |\n\n`;
   md += `## 📅 Daily Breakdown\n`;
   dates.forEach(d => {
     const ds = dayStats(d);
     md += `- **${DAY_FULL[d.getDay()]}** ${fmtShort(d)}: ${ds.pct}% (${ds.g}✓ ${ds.a}~ ${ds.r}✗)\n`;
   });
-  md += `\n## 🏆 Habit Performance\n`;
+  md += `\n##  Habit Performance\n`;
   habitPerf.forEach(h => {
     const bar = '█'.repeat(Math.round(h.pct / 10)) + '░'.repeat(10 - Math.round(h.pct / 10));
     md += `- **${h.name}** — ${h.pct}% [${bar}] (${h.g}✓ ${h.a}~ ${h.r}✗)\n`;
@@ -777,7 +977,7 @@ function generateWeeklyReport(dates = null) {
   else if (ws.pct >= 40) md += `Progress being made. Try the "never miss twice" rule.\n`;
   else md += `Tough week — that's okay. Pick ONE habit to master next week.\n`;
   md += `\n---\n*Generated by Daily Discipline Tracker · ${fmtLong(new Date())}*\n`;
-
+  
   return { md, period, ws, habitPerf, bestDay, worstDay, bestHabit, worstHabit, streak, max, xp, current };
 }
 
@@ -785,14 +985,14 @@ function showWeeklyReport() {
   const report = generateWeeklyReport();
   currentReportText = report.md;
   document.getElementById('report-period').textContent = report.period;
-
+  
   let html = `<h3>🎯 Overview</h3>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">Week Score</span><span class="report-stat-value">${report.ws.pct}%</span></div>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">Green / Amber / Red</span><span class="report-stat-value">${report.ws.tg} / ${report.ws.ta} / ${report.ws.tr}</span></div>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">Current Streak</span><span class="report-stat-value">🔥 ${report.streak} days</span></div>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">Level</span><span class="report-stat-value">Lv.${report.current.lvl} ${report.current.name}</span></div>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">Total XP</span><span class="report-stat-value">${report.xp}</span></div>`;
-
+  
   html += `<h3>🏆 Habit Performance</h3>`;
   report.habitPerf.forEach(h => {
     const color = h.pct >= 70 ? 'var(--green)' : h.pct >= 40 ? 'var(--amber)' : 'var(--red)';
@@ -802,22 +1002,23 @@ function showWeeklyReport() {
       <div class="report-habit-pct">${h.pct}%</div>
     </div>`;
   });
-
+  
   html += `<h3>💡 Highlights</h3>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">🌟 Best day</span><span class="report-stat-value">${DAY_FULL[report.bestDay.date.getDay()]} (${report.bestDay.pct}%)</span></div>`;
   if (report.worstDay.pct > 0) html += `<div class="report-stat-row"><span class="report-stat-label">📉 Toughest day</span><span class="report-stat-value">${DAY_FULL[report.worstDay.date.getDay()]} (${report.worstDay.pct}%)</span></div>`;
   html += `<div class="report-stat-row"><span class="report-stat-label">⭐ Top habit</span><span class="report-stat-value" style="font-size:10px">${report.bestHabit.name}</span></div>`;
-
+  
   let rec = '';
   if (report.ws.pct >= 80) rec = `Outstanding week! Elite level. Maintain momentum.`;
   else if (report.ws.pct >= 60) rec = `Solid performance. Focus on your weakest habit.`;
   else if (report.ws.pct >= 40) rec = `Progress being made. Consistency over perfection.`;
   else rec = `Tough week — that's okay. Pick ONE habit to master.`;
-  html += `<div class="report-insight-box"><strong>🤖 AI Coach:</strong> ${rec}</div>`;
-
+  
+  html += `<div class="report-insight-box"><strong> AI Coach:</strong> ${rec}</div>`;
+  
   document.getElementById('report-content').innerHTML = html;
   document.getElementById('report-modal').classList.add('show');
-
+  
   const weekKey = isoDate(getWeekDates(0)[0]);
   lastReportWeek = weekKey;
   save('ddt_lastreport', lastReportWeek);
@@ -844,7 +1045,7 @@ function downloadReport() {
   a.href = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(currentReportText);
   a.download = `weekly_report_${isoDate(new Date())}.md`;
   a.click();
-  showToast('📥 Report downloaded');
+  showToast(' Report downloaded');
 }
 
 function checkAutoReport() {
@@ -869,7 +1070,7 @@ function openShareModal() {
   const ws = weekStats(getWeekDates(0));
   const allKeys = Object.keys(cellData);
   const greenCount = allKeys.filter(k => cellData[k] === 'green').length;
-
+  
   document.getElementById('share-card-date').textContent = fmtLong(new Date());
   document.getElementById('share-card-stats').innerHTML = `
     <div class="share-stat">
@@ -889,11 +1090,11 @@ function openShareModal() {
       <div class="share-stat-lbl">Green Cells ✓</div>
     </div>
   `;
-
+  
   const nativeBtn = document.getElementById('native-share-btn');
   if (navigator.share) nativeBtn.style.display = 'flex';
   else nativeBtn.style.display = 'none';
-
+  
   document.getElementById('share-modal').classList.add('show');
 }
 
@@ -963,7 +1164,7 @@ function renderCalendar() {
   const { year, month, days, first } = getCalendarMonth(calendarMonthOffset);
   const monthLabel = first.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   document.getElementById('calendar-month-label').textContent = monthLabel;
-
+  
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = days.map(d => {
     if (!d) return `<div class="cal-day empty"></div>`;
@@ -974,19 +1175,19 @@ function renderCalendar() {
       : stats.pct >= 40 ? 'var(--amber)'
       : stats.pct > 0   ? 'var(--red)'
       : 'var(--text3)';
-
+    
     const dots = habits.map(h => {
       const s = getStatus(h.id, d);
       return `<span class="cal-habit-dot ${s}"></span>`;
     }).join('');
-
+    
     return `<div class="cal-day ${today ? 'today' : ''}" onclick="showCalendarDay('${isoDate(d)}')">
       <div class="cal-day-num">${d.getDate()}</div>
       <div class="cal-day-dots">${dots}</div>
       <div class="cal-day-pct" style="color:${pctColor}">${stats.pct > 0 ? stats.pct + '%' : '—'}</div>
     </div>`;
   }).join('');
-
+  
   document.getElementById('calendar-day-detail').innerHTML =
     `<div style="color:var(--text3);font-style:italic">Click any day to see detailed breakdown</div>`;
 }
@@ -995,7 +1196,9 @@ function showCalendarDay(dateStr) {
   const d = new Date(dateStr);
   const stats = dayStats(d);
   const detail = document.getElementById('calendar-day-detail');
+  
   let html = `<div class="cal-detail-title">${DAY_FULL[d.getDay()]}, ${d.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })} · ${stats.pct}%</div>`;
+  
   habits.forEach(h => {
     const s = getStatus(h.id, d);
     html += `<div class="cal-detail-row">
@@ -1004,6 +1207,7 @@ function showCalendarDay(dateStr) {
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2)">◈ ${h.pts} pts</div>
     </div>`;
   });
+  
   detail.innerHTML = html;
 }
 
@@ -1019,21 +1223,26 @@ function renderAll() {
   updateWeekLabel(dates);
   updateStreakWidget();
   renderXPWidget();
+  
   if (activeTab === 'tracker')      renderTracker(dates);
   if (activeTab === 'tasks')        renderTasks(dates);
   if (activeTab === 'calendar')     renderCalendar();
   if (activeTab === 'stats')        renderStats(dates);
   if (activeTab === 'achievements') renderAchievements();
+  if (activeTab === 'leaderboard')  renderLeaderboard();
   if (activeTab === 'settings')     renderSettings();
 }
+
 function updateWeekLabel(dates) {
   const label = weekOffset === 0 ? 'This Week'
     : weekOffset === -1 ? 'Last Week'
     : weekOffset === 1  ? 'Next Week'
     : `${weekOffset > 0 ? '+' : ''}${weekOffset}w`;
+  
   document.getElementById('week-range').textContent =
     `${fmtShort(dates[0])} – ${fmtShort(dates[6])} · ${label}`;
 }
+
 function updateStreakWidget() {
   const { streak } = calcStreak();
   document.getElementById('streak-num').textContent = streak;
@@ -1049,17 +1258,21 @@ function renderTracker(dates) {
   renderScoreStrip(dates);
   renderHabitTable(dates);
 }
+
 function renderScoreStrip(dates) {
   const ws = weekStats(dates);
   const pctColor = ws.pct >= 70 ? 'var(--green)' : ws.pct >= 40 ? 'var(--amber)' : 'var(--red)';
   document.getElementById('score-strip').innerHTML = `
     <div class="score-card green-card"><div class="val">${ws.tg}</div><div class="lbl">✓ COMPLETED</div><div class="sub">Green cells this week</div></div>
     <div class="score-card amber-card"><div class="val">${ws.ta}</div><div class="lbl">~ PARTIAL</div><div class="sub">Half-point cells</div></div>
-    <div class="score-card red-card"><div class="val">${ws.tr}</div><div class="lbl">✗ SKIPPED</div><div class="sub">Missed this week</div></div>
-    <div class="score-card pct-card"><div class="val" style="color:${pctColor}">${ws.pct}%</div><div class="lbl">WEEK SCORE</div><div class="sub">Earned / possible pts</div></div>`;
+    <div class="score-card red-card"><div class="val">${ws.tr}</div><div class="lbl"> SKIPPED</div><div class="sub">Missed this week</div></div>
+    <div class="score-card pct-card"><div class="val" style="color:${pctColor}">${ws.pct}%</div><div class="lbl">WEEK SCORE</div><div class="sub">Earned / possible pts</div></div>
+  `;
 }
+
 function renderHabitTable(dates) {
   const ds = dates.map(d => dayStats(d));
+  
   let head = `<thead><tr>
     <th class="habit-name-th">HABIT / POINTS</th>
     ${dates.map((d, i) => {
@@ -1077,7 +1290,7 @@ function renderHabitTable(dates) {
       </th>`;
     }).join('')}
   </tr></thead>`;
-
+  
   let body = '<tbody>';
   habits.forEach(h => {
     body += `<tr>
@@ -1096,13 +1309,14 @@ function renderHabitTable(dates) {
           <button class="cell-btn ${cls} ${hasNote}"
             onclick="cycleStatus(${h.id},'${isoDate(d)}'); addRipple(event, this)"
             oncontextmenu="event.preventDefault(); openCellNote(${h.id},'${isoDate(d)}')"
-            title="${h.name} · ${fmtShort(d)} · ${s}${cellNotes[key] ? '\n📝 ' + cellNotes[key] : ''}"
+            title="${h.name} · ${fmtShort(d)} · ${s}${cellNotes[key] ? '\n ' + cellNotes[key] : ''}"
             aria-label="${h.name} ${fmtShort(d)}: ${s}">${icon}</button>
         </td>`;
       }).join('')}
     </tr>`;
   });
   body += '</tbody>';
+  
   document.getElementById('habit-table').innerHTML = head + body;
 }
 
@@ -1118,14 +1332,16 @@ function addRipple(e, btn) {
   setTimeout(() => ripple.remove(), 600);
 }
 
-// ── TASKS TAB ─────────────────────────────────────────
+// ── TASKS TAB ────────────────────────────────────────
 function renderTasks(dates) {
   renderTasksGrid(dates);
   renderNotesGrid(dates);
 }
+
 function getTasksForDay(dk) {
   return taskData[dk] || Array.from({ length: 5 }, () => ({ text: '', done: false }));
 }
+
 function renderTasksGrid(dates) {
   document.getElementById('tasks-week-grid').innerHTML = dates.map(d => {
     const dk = isoDate(d);
@@ -1137,39 +1353,41 @@ function renderTasksGrid(dates) {
         <span>${DAY_NAMES[d.getDay()]} ${fmtShort(d)}</span>
         <span class="task-done-count">${doneCount}/5</span>
       </div>
-      ${dayTasks.map((t, j) => `
-        <div class="task-item">
-          <input type="checkbox" class="task-cb" ${t.done ? 'checked' : ''}
-            onchange="toggleTask('${dk}',${j},this.checked)">
-          <input class="task-text ${t.done ? 'done-text' : ''}"
-            value="${(t.text || '').replace(/"/g, '&quot;')}"
-            placeholder="Task ${j+1}..."
-            oninput="updateTaskText('${dk}',${j},this.value)">
-        </div>`).join('')}
+      ${dayTasks.map((t, j) => `<div class="task-item">
+        <input type="checkbox" class="task-cb" ${t.done ? 'checked' : ''}
+          onchange="toggleTask('${dk}',${j},this.checked)">
+        <input class="task-text ${t.done ? 'done-text' : ''}"
+          value="${(t.text || '').replace(/"/g, '&quot;')}"
+          placeholder="Task ${j+1}..."
+          oninput="updateTaskText('${dk}',${j},this.value)">
+      </div>`).join('')}
     </div>`;
   }).join('');
 }
+
 function renderNotesGrid(dates) {
   document.getElementById('notes-grid').innerHTML = dates.map(d => {
     const dk = isoDate(d);
     return `<div class="note-wrap">
       <div class="note-day-lbl">${DAY_NAMES[d.getDay()]}</div>
-      <textarea class="note-textarea" rows="4" placeholder="Daily notes..."
-        oninput="updateNote('${dk}',this.value)">${noteData[dk] || ''}</textarea>
+      <textarea class="note-textarea" rows="4" placeholder="Daily notes..." oninput="updateNote('${dk}',this.value)">${noteData[dk] || ''}</textarea>
     </div>`;
   }).join('');
 }
+
 function toggleTask(dk, j, checked) {
   if (!taskData[dk]) taskData[dk] = Array.from({ length: 5 }, () => ({ text: '', done: false }));
   taskData[dk][j].done = checked;
   save('ddt_tasks', taskData);
   renderTasks(getWeekDates(weekOffset));
 }
+
 function updateTaskText(dk, j, val) {
   if (!taskData[dk]) taskData[dk] = Array.from({ length: 5 }, () => ({ text: '', done: false }));
   taskData[dk][j].text = val;
   save('ddt_tasks', taskData);
 }
+
 function updateNote(dk, val) {
   noteData[dk] = val;
   save('ddt_notes', noteData);
@@ -1185,19 +1403,24 @@ function renderStats(dates) {
   renderBarChart();
   renderHeatmap();
 }
+
 function renderStatsTopCards(dates) {
   const ws = weekStats(dates);
   const { streak, max } = calcStreak();
   const xp = calculateXP();
+  
   document.getElementById('stats-top-cards').innerHTML = `
     <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${streak}</div><div class="stat-lbl">Current Streak</div><div class="stat-sub">days ≥50% score</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${max}</div><div class="stat-lbl">Best Streak</div><div class="stat-sub">last 365 days</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--green)">${ws.pct}%</div><div class="stat-lbl">This Week Score</div><div class="stat-sub">earned / possible</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:var(--text)">${xp}</div><div class="stat-lbl">Total XP</div><div class="stat-sub">${unlockedBadges.length}/${BADGES.length} badges</div></div>`;
+    <div class="stat-card"><div class="stat-val" style="color:var(--text)">${xp}</div><div class="stat-lbl">Total XP</div><div class="stat-sub">${unlockedBadges.length}/${BADGES.length} badges</div></div>
+  `;
 }
+
 function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
+
 function renderLineChart() {
   destroyChart('line');
   const labels = [], pcts = [];
@@ -1206,39 +1429,73 @@ function renderLineChart() {
     labels.push(fmtShort(dates[0]));
     pcts.push(weekStats(dates).pct);
   }
+  
   const ctx = document.getElementById('line-chart');
   if (!ctx) return;
+  
   chartInstances['line'] = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data: pcts, borderColor: '#6e56ff',
-      backgroundColor: 'rgba(110,86,255,0.12)', borderWidth: 2.5,
-      pointBackgroundColor: '#6e56ff', pointRadius: 4, tension: 0.38, fill: true }] },
-    options: { responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } } },
+    data: {
+      labels,
+      datasets: [{
+        data: pcts,
+        borderColor: '#6e56ff',
+        backgroundColor: 'rgba(110,86,255,0.12)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#6e56ff',
+        pointRadius: 4,
+        tension: 0.38,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } }
+      },
       scales: {
         y: { min: 0, max: 100, ticks: { color: '#5a5a7a', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
         x: { ticks: { color: '#5a5a7a', font: { size: 10 } }, grid: { display: false } }
-      } }
+      }
+    }
   });
 }
+
 function renderDoughnutChart(dates) {
   destroyChart('doughnut');
   const ws = weekStats(dates);
   const ctx = document.getElementById('doughnut-chart');
   if (!ctx) return;
+  
   const total = ws.tg + ws.ta + ws.tr;
   if (total === 0) return;
+  
   chartInstances['doughnut'] = new Chart(ctx, {
     type: 'doughnut',
-    data: { labels: ['Green', 'Amber', 'Red'],
-      datasets: [{ data: [ws.tg, ws.ta, ws.tr],
+    data: {
+      labels: ['Green', 'Amber', 'Red'],
+      datasets: [{
+        data: [ws.tg, ws.ta, ws.tr],
         backgroundColor: ['rgba(5,245,142,0.75)', 'rgba(255,190,61,0.75)', 'rgba(255,77,106,0.75)'],
-        borderColor: ['#05f58e', '#ffbe3d', '#ff4d6a'], borderWidth: 1.5 }] },
-    options: { responsive: true, cutout: '65%',
-      plugins: { legend: { display: true, position: 'bottom',
-        labels: { color: '#9090b0', font: { size: 11 }, padding: 12, boxWidth: 10 } } } }
+        borderColor: ['#05f58e', '#ffbe3d', '#ff4d6a'],
+        borderWidth: 1.5
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { color: '#9090b0', font: { size: 11 }, padding: 12, boxWidth: 10 }
+        }
+      }
+    }
   });
 }
+
 function renderBarChart() {
   destroyChart('bar');
   const today = new Date();
@@ -1253,22 +1510,35 @@ function renderBarChart() {
     }
     return Math.round(g / tot * 100);
   });
+  
   const ctx = document.getElementById('bar-chart');
   if (!ctx) return;
+  
   chartInstances['bar'] = new Chart(ctx, {
     type: 'bar',
-    data: { labels: habits.map(h => h.name.length > 20 ? h.name.slice(0, 20) + '…' : h.name),
-      datasets: [{ data: pcts,
+    data: {
+      labels: habits.map(h => h.name.length > 20 ? h.name.slice(0, 20) + '…' : h.name),
+      datasets: [{
+        data: pcts,
         backgroundColor: pcts.map(p => p >= 70 ? 'rgba(5,245,142,0.65)' : p >= 40 ? 'rgba(255,190,61,0.65)' : 'rgba(255,77,106,0.65)'),
-        borderRadius: 6, borderSkipped: false }] },
-    options: { responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } } },
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } }
+      },
       scales: {
         y: { min: 0, max: 100, ticks: { color: '#5a5a7a', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
         x: { ticks: { color: '#5a5a7a', font: { size: 10 }, maxRotation: 28 }, grid: { display: false } }
-      } }
+      }
+    }
   });
 }
+
 function renderHeatmap() {
   const today = new Date();
   const days = [];
@@ -1276,21 +1546,23 @@ function renderHeatmap() {
     const d = new Date(today); d.setDate(today.getDate() - i);
     days.push({ date: d, pct: dayStats(d).pct });
   }
+  
   const rows = [];
   for (let r = 0; r < Math.ceil(days.length / 7); r++) {
     rows.push(days.slice(r * 7, r * 7 + 7));
   }
+  
   const getColor = pct =>
     pct >= 80 ? 'var(--green)' :
     pct >= 55 ? 'rgba(5,245,142,0.45)' :
     pct >= 30 ? 'var(--amber)' :
-    pct >  0  ? 'rgba(255,77,106,0.55)' :
+    pct > 0  ? 'rgba(255,77,106,0.55)' :
     'rgba(255,255,255,0.05)';
+  
   const html = `<div class="heatmap-grid">
     ${rows.map(row => `<div class="heatmap-row-wrap">
       <span class="heatmap-week-lbl">${fmtShort(row[0])}</span>
-      ${row.map(cell => `<div class="heatmap-cell" style="background:${getColor(cell.pct)}"
-        title="${fmtShort(cell.date)} — ${cell.pct}%"></div>`).join('')}
+      ${row.map(cell => `<div class="heatmap-cell" style="background:${getColor(cell.pct)}" title="${fmtShort(cell.date)} — ${cell.pct}%"></div>`).join('')}
     </div>`).join('')}
   </div>
   <div class="heatmap-legend">
@@ -1300,22 +1572,21 @@ function renderHeatmap() {
     <span><span class="hl-dot" style="background:rgba(255,77,106,0.55)"></span>1–29%</span>
     <span><span class="hl-dot" style="background:rgba(255,255,255,0.05)"></span>No data</span>
   </div>`;
+  
   document.getElementById('heatmap-container').innerHTML = html;
 }
 
-// ── SETTINGS TAB ──────────────────────────────────────
+// ─ SETTINGS TAB ──────────────────────────────────────
 function renderSettings() {
   const list = document.getElementById('habits-edit-list');
-  list.innerHTML = habits.map((h, i) => `
-    <div class="habit-edit-row">
-      <input class="s-input" style="flex:1;min-width:100px" value="${h.name}"
-        oninput="updateHabitField(${i},'name',this.value)">
-      <input class="s-input pts-input" type="number" value="${h.pts}" min="1" max="10"
-        oninput="updateHabitField(${i},'pts',+this.value)">
-      <button class="s-btn danger icon-btn" onclick="deleteHabit(${i})" title="Delete">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </div>`).join('');
+  list.innerHTML = habits.map((h, i) => `<div class="habit-edit-row">
+    <input class="s-input" style="flex:1;min-width:100px" value="${h.name}" oninput="updateHabitField(${i},'name',this.value)">
+    <input class="s-input pts-input" type="number" value="${h.pts}" min="1" max="10" oninput="updateHabitField(${i},'pts',+this.value)">
+    <button class="s-btn danger icon-btn" onclick="deleteHabit(${i})" title="Delete">
+      <i class="fa-solid fa-trash"></i>
+    </button>
+  </div>`).join('');
+  
   const xp = calculateXP();
   document.getElementById('data-info').innerHTML =
     `Total XP: ${xp} · Level: Lv.${getLevelInfo(xp).current.lvl}<br>
@@ -1324,10 +1595,12 @@ function renderSettings() {
      Cell notes: ${Object.keys(cellNotes).length}<br>
      Task entries: ${Object.keys(taskData).length} days`;
 }
+
 function updateHabitField(i, field, val) {
   habits[i][field] = val;
   save('ddt_habits', habits);
 }
+
 function deleteHabit(i) {
   if (habits.length <= 1) return alert('Keep at least 1 habit.');
   if (!confirm(`Delete "${habits[i].name}"?`)) return;
@@ -1335,6 +1608,7 @@ function deleteHabit(i) {
   save('ddt_habits', habits);
   renderAll();
 }
+
 function addHabit() {
   const name = document.getElementById('new-habit-name').value.trim();
   const pts  = parseInt(document.getElementById('new-habit-pts').value) || 3;
@@ -1349,25 +1623,31 @@ function addHabit() {
 function buildCSV(dates) {
   const cols = dates.map(d => `${DAY_NAMES[d.getDay()]} ${fmtShort(d)}`);
   let csv = 'Habit,Points,' + cols.join(',') + '\n';
+  
   habits.forEach(h => {
     const row = dates.map(d => getStatus(h.id, d));
     csv += `"${h.name}",${h.pts},${row.join(',')}\n`;
   });
+  
   csv += '\n';
   csv += 'Day Score %,,' + dates.map(d => dayStats(d).pct + '%').join(',') + '\n';
   csv += 'Green,,'       + dates.map(d => dayStats(d).g).join(',') + '\n';
   csv += 'Amber,,'       + dates.map(d => dayStats(d).a).join(',') + '\n';
   csv += 'Red,,'         + dates.map(d => dayStats(d).r).join(',') + '\n';
+  
   return csv;
 }
+
 function exportCSV() {
   const dates = getWeekDates(weekOffset);
   downloadCSV(buildCSV(dates), `discipline_week_${isoDate(dates[0])}.csv`);
   showToast('📥 Week exported');
 }
+
 function exportAllCSV() {
   const keys = Object.keys(cellData);
   if (!keys.length) return alert('No data to export.');
+  
   let allCSV = 'DAILY DISCIPLINE TRACKER — ALL DATA\n\n';
   for (let w = 11; w >= 0; w--) {
     const dates = getWeekDates(-w);
@@ -1375,9 +1655,11 @@ function exportAllCSV() {
     allCSV += buildCSV(dates);
     allCSV += '\n';
   }
+  
   downloadCSV(allCSV, `discipline_all_${isoDate(new Date())}.csv`);
   showToast('📥 All data exported');
 }
+
 function downloadCSV(content, filename) {
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
@@ -1385,16 +1667,18 @@ function downloadCSV(content, filename) {
   a.click();
 }
 
-// ── CSV IMPORT ────────────────────────────────────────
+// ── CSV IMPORT ───────────────────────────────────────
 function importCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
+  
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const text = e.target.result;
       const lines = text.split('\n').filter(l => l.trim());
       if (lines.length < 2) throw new Error('Empty CSV');
+      
       const header = lines[0].split(',');
       const dateCols = [];
       for (let i = 2; i < header.length; i++) {
@@ -1404,7 +1688,9 @@ function importCSV(event) {
           if (!isNaN(d)) dateCols.push({ idx: i, date: isoDate(d) });
         }
       }
+      
       if (!dateCols.length) throw new Error('No valid date columns found');
+      
       let imported = 0;
       for (let i = 1; i < lines.length; i++) {
         const row = lines[i].split(',');
@@ -1412,6 +1698,7 @@ function importCSV(event) {
         const name = row[0].replace(/^"|"$/g, '');
         const habit = habits.find(h => h.name.toLowerCase() === name.toLowerCase());
         if (!habit) continue;
+        
         dateCols.forEach(col => {
           const cellStatus = row[col.idx];
           if (['green','amber','red','none'].includes(cellStatus)) {
@@ -1420,6 +1707,7 @@ function importCSV(event) {
           }
         });
       }
+      
       save('ddt_data', cellData);
       renderAll();
       checkProgression();
@@ -1429,6 +1717,7 @@ function importCSV(event) {
     }
     event.target.value = '';
   };
+  
   reader.readAsText(file);
 }
 
@@ -1442,6 +1731,7 @@ function resetWeek() {
   save('ddt_data', cellData);
   renderAll();
 }
+
 function clearAllData() {
   if (!confirm('Delete ALL tracker data permanently?')) return;
   cellData = {}; taskData = {}; noteData = {}; cellNotes = {};
@@ -1459,29 +1749,41 @@ function clearAllData() {
 // ── NAVIGATION ────────────────────────────────────────
 function changeWeek(dir) { weekOffset += dir; renderAll(); }
 function goToday()       { weekOffset = 0; renderAll(); }
+
 function switchTab(tab, el) {
   activeTab = tab;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   el.classList.add('active');
+  
   const titles = {
-    tracker: 'Weekly Tracker', tasks: 'Daily Tasks', calendar: 'Calendar View',
-    stats: 'Analytics', achievements: 'Achievements', settings: 'Settings'
+    tracker: 'Weekly Tracker',
+    tasks: 'Daily Tasks',
+    calendar: 'Calendar View',
+    stats: 'Analytics',
+    achievements: 'Achievements',
+    leaderboard: 'Leaderboard',
+    settings: 'Settings'
   };
   document.getElementById('page-title').textContent = titles[tab];
+  
   const weekCtrl = document.getElementById('week-controls');
   weekCtrl.style.display = (tab === 'tracker' || tab === 'tasks') ? 'flex' : 'none';
+  
   if (tab === 'stats') { ['line','doughnut','bar'].forEach(destroyChart); }
+  
   renderAll();
 }
+
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// ── KEYBOARD SHORTCUTS ────────────────────────────────
+// ─ KEYBOARD SHORTCUTS ───────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  
   if (e.key === 'Escape') {
     closeModal('report-modal');
     closeModal('share-modal');
@@ -1489,12 +1791,14 @@ document.addEventListener('keydown', e => {
     closeLevelUpPopup();
     closeNotePopup();
   }
+  
   if (activeTab === 'tracker' || activeTab === 'tasks') {
     if (e.key === 'ArrowLeft')  changeWeek(-1);
     if (e.key === 'ArrowRight') changeWeek(1);
     if (e.key === 't' || e.key === 'T') goToday();
     if (e.key === 'f' || e.key === 'F') toggleFocusMode();
   }
+  
   if (activeTab === 'calendar') {
     if (e.key === 'ArrowLeft')  changeMonth(-1);
     if (e.key === 'ArrowRight') changeMonth(1);
@@ -1507,13 +1811,19 @@ setQuote();
 renderAll();
 checkProgression();
 updateNotifUI();
+
 if (notifEnabled && 'Notification' in window && Notification.permission === 'granted') {
   scheduleDailyReminder();
 }
+
 // Restore sound icon
 document.getElementById('sound-icon').className =
   soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
 document.getElementById('sound-toggle').classList.toggle('active', soundEnabled);
+
 // Auto report check
 checkAutoReport();
 setInterval(checkAutoReport, 60000);
+
+// Initialize leaderboard on load
+fakeCompetitors = generateFakeCompetitors();
