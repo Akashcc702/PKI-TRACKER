@@ -1,19 +1,18 @@
 /* =====================================================
-   Daily Discipline Tracker — app.js
-   All logic: state, rendering, persistence, export
-   ===================================================== */
+Daily Discipline Tracker — app.js (Enhanced v3)
+Features: AI Coach, Weekly Reports, Social Share
+===================================================== */
 
 // ── DEFAULT DATA ──────────────────────────────────────
 const DEFAULT_HABITS = [
-  { id: 1, name: "10PM–05AM Sleep + Drink 4L Water",    pts: 5 },
-  { id: 2, name: "Diet — No Junk Food",                 pts: 3 },
-  { id: 3, name: "Exercise & Meditation",               pts: 5 },
-  { id: 4, name: "Only 1hr Phone (except education)",   pts: 4 },
-  { id: 5, name: "5 Achieve Tasks",                     pts: 5 },
-  { id: 6, name: "Follow Time Table",                   pts: 3 },
-  { id: 7, name: "Spend 5 Hours with AI",               pts: 3 }
+  { id: 1, name: "10PM–05AM Sleep + Drink 4L Water", pts: 5 },
+  { id: 2, name: "Diet — No Junk Food",              pts: 3 },
+  { id: 3, name: "Exercise & Meditation",             pts: 5 },
+  { id: 4, name: "Only 1hr Phone (except education)", pts: 4 },
+  { id: 5, name: "5 Achieve Tasks",                   pts: 5 },
+  { id: 6, name: "Follow Time Table",                 pts: 3 },
+  { id: 7, name: "Spend 5 Hours with AI",             pts: 3 }
 ];
-
 const QUOTES = [
   "Discipline is the bridge between goals and accomplishment.",
   "Small daily improvements are the key to staggering long-term results.",
@@ -36,19 +35,48 @@ const QUOTES = [
   "Believe in yourself and all that you are.",
   "Your future is created by what you do today, not tomorrow."
 ];
-
-const DAY_NAMES  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const STATUS_CYCLE = ['none','green','amber','red'];
 const STATUS_ICONS = { none:'·', green:'✓', amber:'~', red:'✗' };
 
+// ── LEVELS & BADGES ───────────────────────────────────
+const LEVELS = [
+  { lvl: 1, name: 'Novice',      xp: 0 },
+  { lvl: 2, name: 'Beginner',    xp: 100 },
+  { lvl: 3, name: 'Disciplined', xp: 500 },
+  { lvl: 4, name: 'Committed',   xp: 1500 },
+  { lvl: 5, name: 'Expert',      xp: 4000 },
+  { lvl: 6, name: 'Master',      xp: 10000 },
+  { lvl: 7, name: 'Legend',      xp: 25000 }
+];
+const BADGES = [
+  { id: 'first_day',   icon: '🌱', name: 'First Step',       desc: 'Track your first habit' },
+  { id: 'first_week',  icon: '🏆', name: 'First Week',       desc: 'Track 7 different days' },
+  { id: 'perfect_day', icon: '💯', name: 'Perfectionist',    desc: 'Get 100% score on any day' },
+  { id: 'century',     icon: '🎯', name: 'Century',          desc: 'Earn 100 green cells' },
+  { id: 'streak_7',    icon: '🔥', name: 'Week Warrior',     desc: '7-day streak' },
+  { id: 'streak_14',   icon: '⚡', name: 'Fortnight Force',  desc: '14-day streak' },
+  { id: 'streak_30',   icon: '🔥', name: 'Streak Master',    desc: '30-day streak' },
+  { id: 'streak_60',   icon: '💎', name: 'Iron Will',        desc: '60-day streak' },
+  { id: 'streak_100',  icon: '👑', name: 'Centurion',        desc: '100-day streak' },
+  { id: 'comeback',    icon: '🦅', name: 'Comeback Kid',     desc: 'Recover after a broken streak' }
+];
+
 // ── STATE ─────────────────────────────────────────────
-let habits    = load('ddt_habits', DEFAULT_HABITS);
-let cellData  = load('ddt_data',   {});
-let taskData  = load('ddt_tasks',  {});
-let noteData  = load('ddt_notes',  {});
-let weekOffset = 0;
-let activeTab  = 'tracker';
-let chartInstances = {};
+let habits          = load('ddt_habits', DEFAULT_HABITS);
+let cellData        = load('ddt_data',   {});
+let taskData        = load('ddt_tasks',  {});
+let noteData        = load('ddt_notes',  {});
+let unlockedBadges  = load('ddt_badges', []);
+let lastLevel       = load('ddt_lastlevel', 1);
+let hadBrokenStreak = load('ddt_hadbroken', false);
+let lastReportWeek  = load('ddt_lastreport', '');
+let weekOffset      = 0;
+let calendarMonthOffset = 0;
+let activeTab       = 'tracker';
+let chartInstances  = {};
+let currentReportText = '';
 
 // ── PERSISTENCE ───────────────────────────────────────
 function load(key, fallback) {
@@ -61,9 +89,9 @@ function save(key, val) {
 
 // ── DATE HELPERS ──────────────────────────────────────
 function getWeekDates(offset = 0) {
-  const now  = new Date();
-  const day  = now.getDay();
-  const sun  = new Date(now);
+  const now = new Date();
+  const day = now.getDay();
+  const sun = new Date(now);
   sun.setDate(now.getDate() - day + offset * 7);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(sun);
@@ -71,19 +99,19 @@ function getWeekDates(offset = 0) {
     return d;
   });
 }
-
 function isoDate(d)  { return d.toISOString().split('T')[0]; }
 function isToday(d)  { return isoDate(d) === isoDate(new Date()); }
-
 function fmtShort(d) {
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
+function fmtLong(d) {
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 // ── STATUS HELPERS ────────────────────────────────────
 function getStatus(habitId, date) {
   return cellData[`${isoDate(date)}_${habitId}`] || 'none';
 }
-
 function cycleStatus(habitId, dateStr) {
   const key = `${dateStr}_${habitId}`;
   const cur  = cellData[key] || 'none';
@@ -91,6 +119,7 @@ function cycleStatus(habitId, dateStr) {
   cellData[key] = next;
   save('ddt_data', cellData);
   renderAll();
+  checkProgression();
 }
 
 // ── STATS CALCULATIONS ────────────────────────────────
@@ -106,7 +135,6 @@ function dayStats(date) {
   const pct = total > 0 ? Math.round(earned / total * 100) : 0;
   return { g, a, r, pct, earned, total };
 }
-
 function weekStats(dates) {
   let tg=0, ta=0, tr=0, earned=0, total=0;
   dates.forEach(d => {
@@ -117,19 +145,833 @@ function weekStats(dates) {
   const pct = total > 0 ? Math.round(earned / total * 100) : 0;
   return { tg, ta, tr, pct };
 }
-
 function calcStreak() {
   let streak = 0, max = 0, cur = 0;
   const today = new Date();
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const s = dayStats(d);
     if (s.pct >= 50) { cur++; }
-    else { if (i === 0) { streak = 0; } max = Math.max(max, cur); cur = 0; }
+    else {
+      if (i === 0) streak = 0;
+      max = Math.max(max, cur);
+      cur = 0;
+    }
   }
   if (cur > 0) { streak = cur; max = Math.max(max, cur); }
   return { streak, max };
+}
+
+// ── XP & LEVEL ────────────────────────────────────────
+function calculateXP() {
+  let xp = 0;
+  Object.values(cellData).forEach(v => {
+    if (v === 'green') xp += 10;
+    else if (v === 'amber') xp += 5;
+  });
+  return xp;
+}
+function getLevelInfo(xp) {
+  let current = LEVELS[0], next = LEVELS[1];
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].xp) {
+      current = LEVELS[i];
+      next = LEVELS[i + 1] || null;
+      break;
+    }
+  }
+  const progress = next
+    ? ((xp - current.xp) / (next.xp - current.xp)) * 100
+    : 100;
+  return { current, next, progress };
+}
+function renderXPWidget() {
+  const xp = calculateXP();
+  const { current, next, progress } = getLevelInfo(xp);
+  document.getElementById('xp-level-badge').textContent = `Lv.${current.lvl}`;
+  document.getElementById('xp-level-name').textContent = current.name;
+  document.getElementById('xp-current').textContent = xp;
+  document.getElementById('xp-next').textContent = next ? next.xp : '∞';
+  document.getElementById('xp-total').textContent = xp;
+  document.getElementById('xp-bar-fill').style.width = Math.min(100, progress) + '%';
+}
+
+// ── ACHIEVEMENTS ──────────────────────────────────────
+function checkAchievements() {
+  const { streak, max } = calcStreak();
+  const allKeys = Object.keys(cellData);
+  const uniqueDays = new Set(allKeys.map(k => k.split('_')[0])).size;
+  const greenCount = Object.values(cellData).filter(v => v === 'green').length;
+
+  let hasPerfectDay = false;
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (dayStats(d).pct === 100) { hasPerfectDay = true; break; }
+  }
+
+  const checks = {
+    'first_day':   allKeys.length >= 1,
+    'first_week':  uniqueDays >= 7,
+    'perfect_day': hasPerfectDay,
+    'century':     greenCount >= 100,
+    'streak_7':    streak >= 7 || max >= 7,
+    'streak_14':   streak >= 14 || max >= 14,
+    'streak_30':   streak >= 30 || max >= 30,
+    'streak_60':   streak >= 60 || max >= 60,
+    'streak_100':  streak >= 100 || max >= 100,
+    'comeback':    hadBrokenStreak && streak >= 3
+  };
+
+  if (streak === 0 && uniqueDays >= 2) {
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    if (dayStats(yesterday).pct < 50) {
+      for (let i = 2; i < 60; i++) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        if (dayStats(d).pct >= 50) {
+          hadBrokenStreak = true;
+          save('ddt_hadbroken', true);
+          break;
+        }
+      }
+    }
+  }
+
+  let newlyUnlocked = [];
+  BADGES.forEach(b => {
+    if (!unlockedBadges.includes(b.id) && checks[b.id]) {
+      unlockedBadges.push(b.id);
+      newlyUnlocked.push(b);
+    }
+  });
+
+  if (newlyUnlocked.length > 0) {
+    save('ddt_badges', unlockedBadges);
+    showAchPopup(newlyUnlocked[0]);
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    }
+  }
+}
+
+function checkLevelUp() {
+  const xp = calculateXP();
+  const { current } = getLevelInfo(xp);
+  if (current.lvl > lastLevel) {
+    lastLevel = current.lvl;
+    save('ddt_lastlevel', lastLevel);
+    showLevelUpPopup(current);
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 200, spread: 120, origin: { y: 0.5 },
+        colors: ['#6e56ff', '#a08cff', '#05f58e', '#ffbe3d']
+      });
+    }
+  }
+}
+
+function checkProgression() {
+  checkAchievements();
+  checkLevelUp();
+  renderXPWidget();
+  if (activeTab === 'achievements') renderAchievements();
+}
+
+function showAchPopup(badge) {
+  document.getElementById('ach-popup-icon').textContent = badge.icon;
+  document.getElementById('ach-popup-name').textContent = badge.name;
+  document.getElementById('ach-popup-desc').textContent = badge.desc;
+  document.getElementById('ach-popup').classList.add('show');
+}
+function closeAchPopup() { document.getElementById('ach-popup').classList.remove('show'); }
+function showLevelUpPopup(level) {
+  document.getElementById('levelup-num').textContent = `Lv.${level.lvl}`;
+  document.getElementById('levelup-name').textContent = level.name;
+  document.getElementById('levelup-popup').classList.add('show');
+}
+function closeLevelUpPopup() { document.getElementById('levelup-popup').classList.remove('show'); }
+
+function renderAchievements() {
+  const grid = document.getElementById('ach-grid');
+  grid.innerHTML = BADGES.map(b => {
+    const unlocked = unlockedBadges.includes(b.id);
+    return `<div class="ach-card ${unlocked ? 'unlocked' : 'locked'}">
+      <span class="ach-icon">${b.icon}</span>
+      <div class="ach-name">${b.name}</div>
+      <div class="ach-desc">${b.desc}</div>
+      <div class="ach-status">${unlocked ? '✓ UNLOCKED' : '🔒 LOCKED'}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ach-progress-label').textContent =
+    `${unlockedBadges.length} / ${BADGES.length} unlocked`;
+}
+
+// ── PATTERN DETECTION ─────────────────────────────────
+function detectPatterns() {
+  const insights = [];
+  const today = new Date();
+
+  const dowStats = Array.from({ length: 7 }, () => ({ total: 0, count: 0 }));
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const pct = dayStats(d).pct;
+    const dow = d.getDay();
+    dowStats[dow].total += pct;
+    dowStats[dow].count++;
+  }
+  const dowAvg = dowStats.map((s, i) => ({
+    dow: i,
+    avg: s.count > 0 ? Math.round(s.total / s.count) : 0
+  })).filter(d => d.avg > 0);
+
+  if (dowAvg.length >= 3) {
+    const best = dowAvg.reduce((a, b) => a.avg > b.avg ? a : b);
+    const worst = dowAvg.reduce((a, b) => a.avg < b.avg ? a : b);
+    if (best.avg - worst.avg >= 20) {
+      insights.push({
+        type: 'info', icon: '📊',
+        title: `Your best day is ${DAY_FULL[best.dow]}`,
+        desc: `You average ${best.avg}% on ${DAY_FULL[best.dow]}s.`
+      });
+      insights.push({
+        type: worst.avg < 40 ? 'bad' : 'warn',
+        icon: worst.avg < 40 ? '⚠️' : '💡',
+        title: `You tend to skip ${DAY_FULL[worst.dow]}s`,
+        desc: `Your ${DAY_FULL[worst.dow]} average is only ${worst.avg}%.`
+      });
+    }
+  }
+
+  const habitStats = habits.map(h => {
+    let g = 0, tot = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const s = getStatus(h.id, d);
+      tot++;
+      if (s === 'green') g++;
+      else if (s === 'amber') g += 0.5;
+    }
+    return { habit: h, pct: tot > 0 ? Math.round(g / tot * 100) : 0 };
+  }).filter(h => h.pct > 0);
+
+  if (habitStats.length >= 2) {
+    const bestH = habitStats.reduce((a, b) => a.pct > b.pct ? a : b);
+    const worstH = habitStats.reduce((a, b) => a.pct < b.pct ? a : b);
+    if (bestH.pct >= 60) {
+      insights.push({
+        type: 'good', icon: '⭐',
+        title: `Strong habit: ${bestH.habit.name}`,
+        desc: `${bestH.pct}% completion — keep it up!`
+      });
+    }
+    if (worstH.pct < 50 && worstH.pct < bestH.pct - 20) {
+      insights.push({
+        type: 'warn', icon: '🎯',
+        title: `Struggling with: ${worstH.habit.name}`,
+        desc: `Only ${worstH.pct}% completion.`
+      });
+    }
+  }
+
+  const { streak, max } = calcStreak();
+  if (streak >= 7) {
+    insights.push({
+      type: 'good', icon: '🔥',
+      title: `${streak}-day streak going strong!`,
+      desc: `Best ever: ${max} days.`
+    });
+  } else if (streak === 0 && max >= 3) {
+    insights.push({
+      type: 'warn', icon: '💪',
+      title: 'Time to rebuild your streak',
+      desc: `Your best was ${max} days.`
+    });
+  }
+
+  return insights.slice(0, 5);
+}
+
+function renderPatterns() {
+  const insights = detectPatterns();
+  const grid = document.getElementById('pattern-grid');
+  if (insights.length === 0) {
+    grid.innerHTML = `<div class="pattern-card">
+      <div class="pattern-icon info">📊</div>
+      <div class="pattern-body">
+        <div class="pattern-title">Not enough data yet</div>
+        <div class="pattern-desc">Track at least 7 days to see patterns.</div>
+      </div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = insights.map(ins => `
+    <div class="pattern-card">
+      <div class="pattern-icon ${ins.type}">${ins.icon}</div>
+      <div class="pattern-body">
+        <div class="pattern-title">${ins.title}</div>
+        <div class="pattern-desc">${ins.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── 🤖 AI COACH — Deep Insights ───────────────────────
+function generateAIInsights() {
+  const insights = [];
+  const today = new Date();
+
+  // 1. Per-habit 3-week trend analysis
+  habits.forEach(h => {
+    const weeks = [0, 0, 0]; // current, last, 2-weeks-ago
+    for (let w = 0; w < 3; w++) {
+      let g = 0, tot = 0;
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - (w * 7 + d));
+        const s = getStatus(h.id, date);
+        tot++;
+        if (s === 'green') g++;
+        else if (s === 'amber') g += 0.5;
+      }
+      weeks[w] = tot > 0 ? Math.round(g / tot * 100) : -1;
+    }
+
+    // Declining trend
+    if (weeks[0] >= 0 && weeks[2] >= 0) {
+      const drop = weeks[2] - weeks[0];
+      if (drop >= 30 && weeks[0] < 50) {
+        insights.push({
+          priority: 'high',
+          icon: '📉',
+          title: `${h.name} is declining`,
+          desc: `Dropped from ${weeks[2]}% → ${weeks[0]}% in 3 weeks. This habit needs attention.`,
+          tip: `💡 Try the "2-minute rule" — commit to just 2 minutes of this habit daily. Small wins rebuild momentum.`
+        });
+      } else if (drop <= -30 && weeks[0] >= 70) {
+        insights.push({
+          priority: 'low',
+          icon: '📈',
+          title: `${h.name} is improving!`,
+          desc: `Rose from ${weeks[2]}% → ${weeks[0]}% — great momentum!`,
+          tip: `💡 You're building a strong habit. Keep the streak going — consistency beats intensity.`
+        });
+      }
+    }
+
+    // Consistently skipped
+    if (weeks[0] === 0 && weeks[1] === 0 && weeks[2] === 0) {
+      insights.push({
+        priority: 'high',
+        icon: '⚠️',
+        title: `${h.name} untouched for 3 weeks`,
+        desc: `You haven't tracked this habit at all in 21 days.`,
+        tip: `💡 Consider removing it if it's not relevant, OR break it into a smaller, easier version.`
+      });
+    }
+  });
+
+  // 2. Momentum detection
+  const { streak, max } = calcStreak();
+  if (streak >= 3 && streak < 7) {
+    insights.push({
+      priority: 'med',
+      icon: '🚀',
+      title: `Building momentum: ${streak} days`,
+      desc: `You're on a roll! The next 4 days will unlock "Week Warrior" badge.`,
+      tip: `💡 Momentum is fragile — protect it. Even partial (amber) counts toward your streak.`
+    });
+  } else if (streak >= 7 && streak < 14) {
+    insights.push({
+      priority: 'low',
+      icon: '⚡',
+      title: `${streak}-day streak — you're disciplined!`,
+      desc: `Keep going — 14 days unlocks "Fortnight Force".`,
+      tip: `💡 Research shows 21 days forms a habit. You're 1/3 there!`
+    });
+  }
+
+  // 3. Weekly comparison
+  const thisWeek = weekStats(getWeekDates(0));
+  const lastWeek = weekStats(getWeekDates(-1));
+  if (lastWeek.pct > 0 && thisWeek.pct > 0) {
+    const diff = thisWeek.pct - lastWeek.pct;
+    if (diff >= 15) {
+      insights.push({
+        priority: 'low',
+        icon: '🎉',
+        title: `This week is ${diff}% better than last!`,
+        desc: `${lastWeek.pct}% → ${thisWeek.pct}%. You're leveling up.`,
+        tip: `💡 Identify what changed — better sleep? Earlier start? Double down on it.`
+      });
+    } else if (diff <= -15) {
+      insights.push({
+        priority: 'med',
+        icon: '⚠️',
+        title: `This week is ${Math.abs(diff)}% worse than last`,
+        desc: `${lastWeek.pct}% → ${thisWeek.pct}%. Something shifted.`,
+        tip: `💡 Check your journal notes — was there a trigger? Awareness is the first step to recovery.`
+      });
+    }
+  }
+
+  // 4. Time-of-day / habit correlation (simple: which habits done together)
+  if (habits.length >= 3) {
+    let togetherCount = 0, totalDays = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const statuses = habits.map(h => getStatus(h.id, d));
+      const greens = statuses.filter(s => s === 'green').length;
+      if (greens >= 2) totalDays++;
+      if (greens === habits.length) togetherCount++;
+    }
+    if (totalDays >= 5 && togetherCount / totalDays >= 0.3) {
+      insights.push({
+        priority: 'info',
+        icon: '🔗',
+        title: `You have "habit stacking"`,
+        desc: `${Math.round(togetherCount / totalDays * 100)}% of productive days, you complete ALL habits together.`,
+        tip: `💡 This is powerful — James Clear calls it "habit stacking". Keep your routine consistent.`
+      });
+    }
+  }
+
+  // 5. Weekend vs weekday gap
+  let weekend = { t: 0, c: 0 }, weekday = { t: 0, c: 0 };
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const pct = dayStats(d).pct;
+    if (pct === 0) continue;
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) { weekend.t += pct; weekend.c++; }
+    else { weekday.t += pct; weekday.c++; }
+  }
+  if (weekend.c >= 3 && weekday.c >= 3) {
+    const wendAvg = Math.round(weekend.t / weekend.c);
+    const wdayAvg = Math.round(weekday.t / weekday.c);
+    const gap = Math.abs(wendAvg - wdayAvg);
+    if (gap >= 20) {
+      const weaker = wendAvg < wdayAvg ? 'weekends' : 'weekdays';
+      insights.push({
+        priority: 'med',
+        icon: '🗓️',
+        title: `${weaker.charAt(0).toUpperCase() + weaker.slice(1)} are your weak spot`,
+        desc: `Weekday avg: ${wdayAvg}% · Weekend avg: ${wendAvg}% (${gap}% gap)`,
+        tip: `💡 Set a simpler weekend routine — 1-2 non-negotiable habits beat trying to do everything.`
+      });
+    }
+  }
+
+  // 6. Overall mastery check
+  const allKeys = Object.keys(cellData);
+  const totalMarked = allKeys.filter(k => cellData[k] !== 'none').length;
+  if (totalMarked >= 100) {
+    const greenCount = allKeys.filter(k => cellData[k] === 'green').length;
+    const overallPct = Math.round(greenCount / totalMarked * 100);
+    if (overallPct >= 75) {
+      insights.push({
+        priority: 'low',
+        icon: '👑',
+        title: `You're a discipline master!`,
+        desc: `${overallPct}% all-time green rate across ${totalMarked} tracked cells.`,
+        tip: `💡 At this level, focus on quality — refine habits, raise the bar, mentor others.`
+      });
+    } else if (overallPct < 40) {
+      insights.push({
+        priority: 'high',
+        icon: '🎯',
+        title: `Overall consistency needs work`,
+        desc: `${overallPct}% all-time green rate. Let's rebuild from scratch.`,
+        tip: `💡 Pick just ONE habit to focus on this week. Master it, then add another.`
+      });
+    }
+  }
+
+  // Sort by priority
+  const order = { high: 0, med: 1, low: 2, info: 3 };
+  insights.sort((a, b) => order[a.priority] - order[b.priority]);
+
+  return insights.slice(0, 8);
+}
+
+function renderAIInsights() {
+  const insights = generateAIInsights();
+  const grid = document.getElementById('ai-grid');
+  if (insights.length === 0) {
+    grid.innerHTML = `<div class="ai-card priority-info">
+      <div class="ai-icon">🤖</div>
+      <div class="ai-body">
+        <div class="ai-title">AI Coach needs more data</div>
+        <div class="ai-desc">Track at least 2 weeks of habits to unlock personalized coaching insights.</div>
+      </div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = insights.map(ins => `
+    <div class="ai-card priority-${ins.priority}">
+      <div class="ai-icon">${ins.icon}</div>
+      <div class="ai-body">
+        <div class="ai-title">
+          ${ins.title}
+          ${ins.priority === 'high' ? '<span class="ai-priority-tag high">URGENT</span>' : ''}
+          ${ins.priority === 'med' ? '<span class="ai-priority-tag med">NOTICE</span>' : ''}
+        </div>
+        <div class="ai-desc">${ins.desc}</div>
+        ${ins.tip ? `<div class="ai-tip">${ins.tip}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ── 📧 WEEKLY REPORT ──────────────────────────────────
+function generateWeeklyReport(dates = null) {
+  if (!dates) dates = getWeekDates(-1); // default: last week
+  const ws = weekStats(dates);
+  const { streak, max } = calcStreak();
+  const xp = calculateXP();
+  const { current } = getLevelInfo(xp);
+  const period = `${fmtLong(dates[0])} → ${fmtLong(dates[6])}`;
+
+  // Per-habit stats
+  const habitPerf = habits.map(h => {
+    let g = 0, a = 0, r = 0;
+    dates.forEach(d => {
+      const s = getStatus(h.id, d);
+      if (s === 'green') g++;
+      else if (s === 'amber') a++;
+      else if (s === 'red') r++;
+    });
+    const pct = Math.round((g + a * 0.5) / 7 * 100);
+    return { name: h.name, g, a, r, pct };
+  });
+
+  // Best/worst days
+  const dayPcts = dates.map(d => ({ date: d, pct: dayStats(d).pct }));
+  const bestDay = dayPcts.reduce((a, b) => a.pct > b.pct ? a : b);
+  const worstDay = dayPcts.reduce((a, b) => a.pct < b.pct ? a : b);
+
+  // Best/worst habits
+  const sortedHabits = [...habitPerf].sort((a, b) => b.pct - a.pct);
+  const bestHabit = sortedHabits[0];
+  const worstHabit = sortedHabits[sortedHabits.length - 1];
+
+  // Build markdown report
+  let md = `# 📊 Weekly Discipline Report\n`;
+  md += `**${period}**\n\n`;
+
+  md += `## 🎯 Overview\n`;
+  md += `| Metric | Value |\n|---|---|\n`;
+  md += `| Week Score | **${ws.pct}%** |\n`;
+  md += `| Green Cells | ${ws.tg} |\n`;
+  md += `| Amber Cells | ${ws.ta} |\n`;
+  md += `| Red Cells | ${ws.tr} |\n`;
+  md += `| Current Streak | 🔥 ${streak} days |\n`;
+  md += `| Best Streak | ${max} days |\n`;
+  md += `| Level | Lv.${current.lvl} ${current.name} |\n`;
+  md += `| Total XP | ${xp} |\n\n`;
+
+  md += `## 📅 Daily Breakdown\n`;
+  dates.forEach((d, i) => {
+    const ds = dayStats(d);
+    md += `- **${DAY_FULL[d.getDay()]}** ${fmtShort(d)}: ${ds.pct}% (${ds.g}✓ ${ds.a}~ ${ds.r}✗)\n`;
+  });
+  md += `\n`;
+
+  md += `## 🏆 Habit Performance\n`;
+  habitPerf.forEach(h => {
+    const bar = '█'.repeat(Math.round(h.pct / 10)) + '░'.repeat(10 - Math.round(h.pct / 10));
+    md += `- **${h.name}** — ${h.pct}% [${bar}] (${h.g}✓ ${h.a}~ ${h.r}✗)\n`;
+  });
+  md += `\n`;
+
+  md += `## 💡 Highlights\n`;
+  md += `- 🌟 **Best day:** ${DAY_FULL[bestDay.date.getDay()]} (${bestDay.pct}%)\n`;
+  if (worstDay.pct > 0) {
+    md += `- 📉 **Toughest day:** ${DAY_FULL[worstDay.date.getDay()]} (${worstDay.pct}%)\n`;
+  }
+  md += `- ⭐ **Top habit:** ${bestHabit.name} (${bestHabit.pct}%)\n`;
+  if (worstHabit.pct < 100) {
+    md += `- 🎯 **Needs work:** ${worstHabit.name} (${worstHabit.pct}%)\n`;
+  }
+  md += `\n`;
+
+  // AI-generated recommendation
+  md += `## 🤖 AI Recommendation\n`;
+  if (ws.pct >= 80) {
+    md += `Outstanding week! You're operating at elite level. Focus on maintaining this momentum and consider raising the difficulty of your habits.\n`;
+  } else if (ws.pct >= 60) {
+    md += `Solid performance. To break through to the next level, identify your weakest habit and dedicate extra focus there next week.\n`;
+  } else if (ws.pct >= 40) {
+    md += `You're making progress but consistency needs work. Try the "never miss twice" rule — if you skip a habit one day, make it non-negotiable the next.\n`;
+  } else {
+    md += `This was a tough week. That's okay — what matters is showing up again. Pick ONE habit to master next week. Small wins compound.\n`;
+  }
+
+  md += `\n---\n*Generated by Daily Discipline Tracker · ${fmtLong(new Date())}*\n`;
+
+  return { md, period, ws, habitPerf, bestDay, worstDay, bestHabit, worstHabit, streak, max, xp, current };
+}
+
+function showWeeklyReport() {
+  const report = generateWeeklyReport();
+  currentReportText = report.md;
+  document.getElementById('report-period').textContent = report.period;
+
+  let html = '';
+  html += `<h3>🎯 Overview</h3>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">Week Score</span><span class="report-stat-value">${report.ws.pct}%</span></div>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">Green / Amber / Red</span><span class="report-stat-value">${report.ws.tg} / ${report.ws.ta} / ${report.ws.tr}</span></div>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">Current Streak</span><span class="report-stat-value">🔥 ${report.streak} days</span></div>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">Level</span><span class="report-stat-value">Lv.${report.current.lvl} ${report.current.name}</span></div>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">Total XP</span><span class="report-stat-value">${report.xp}</span></div>`;
+
+  html += `<h3>🏆 Habit Performance</h3>`;
+  report.habitPerf.forEach(h => {
+    const color = h.pct >= 70 ? 'var(--green)' : h.pct >= 40 ? 'var(--amber)' : 'var(--red)';
+    html += `<div class="report-habit-row">
+      <div style="flex:1;font-size:12px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.name}">${h.name}</div>
+      <div class="report-habit-bar"><div class="report-habit-fill" style="width:${h.pct}%;background:${color}"></div></div>
+      <div class="report-habit-pct">${h.pct}%</div>
+    </div>`;
+  });
+
+  html += `<h3>💡 Highlights</h3>`;
+  html += `<div class="report-stat-row"><span class="report-stat-label">🌟 Best day</span><span class="report-stat-value">${DAY_FULL[report.bestDay.date.getDay()]} (${report.bestDay.pct}%)</span></div>`;
+  if (report.worstDay.pct > 0) {
+    html += `<div class="report-stat-row"><span class="report-stat-label">📉 Toughest day</span><span class="report-stat-value">${DAY_FULL[report.worstDay.date.getDay()]} (${report.worstDay.pct}%)</span></div>`;
+  }
+  html += `<div class="report-stat-row"><span class="report-stat-label">⭐ Top habit</span><span class="report-stat-value" style="font-size:10px">${report.bestHabit.name}</span></div>`;
+
+  // AI recommendation
+  let rec = '';
+  if (report.ws.pct >= 80) rec = `Outstanding week! You're operating at elite level. Focus on maintaining this momentum.`;
+  else if (report.ws.pct >= 60) rec = `Solid performance. Identify your weakest habit and dedicate extra focus there next week.`;
+  else if (report.ws.pct >= 40) rec = `Progress is being made. Try the "never miss twice" rule — consistency over perfection.`;
+  else rec = `Tough week — that's okay. Pick ONE habit to master next week. Small wins compound.`;
+  html += `<div class="report-insight-box"><strong>🤖 AI Coach:</strong> ${rec}</div>`;
+
+  document.getElementById('report-content').innerHTML = html;
+  document.getElementById('report-modal').classList.add('show');
+
+  // Mark this week as reported
+  const weekKey = isoDate(getWeekDates(0)[0]);
+  lastReportWeek = weekKey;
+  save('ddt_lastreport', lastReportWeek);
+}
+
+function copyReport() {
+  if (!currentReportText) return;
+  navigator.clipboard.writeText(currentReportText).then(() => {
+    showToast('📋 Report copied to clipboard!');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = currentReportText;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Report copied!');
+  });
+}
+
+function downloadReport() {
+  if (!currentReportText) return;
+  const a = document.createElement('a');
+  a.href = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(currentReportText);
+  a.download = `weekly_report_${isoDate(new Date())}.md`;
+  a.click();
+  showToast('📥 Report downloaded');
+}
+
+function checkAutoReport() {
+  // Auto-show report on Sundays after 8 PM if not shown yet this week
+  const now = new Date();
+  if (now.getDay() !== 0) return; // Not Sunday
+  if (now.getHours() < 20) return; // Before 8 PM
+
+  const weekKey = isoDate(getWeekDates(0)[0]);
+  if (lastReportWeek === weekKey) return; // Already shown
+
+  // Check if there's enough data
+  const ws = weekStats(getWeekDates(-1));
+  if (ws.tg + ws.ta + ws.tr === 0) return;
+
+  setTimeout(() => {
+    showWeeklyReport();
+    showToast('📧 Your weekly report is ready!');
+  }, 2000);
+}
+
+// ── 📤 SOCIAL SHARE ───────────────────────────────────
+function openShareModal() {
+  const { streak, max } = calcStreak();
+  const xp = calculateXP();
+  const { current } = getLevelInfo(xp);
+  const ws = weekStats(getWeekDates(0));
+  const allKeys = Object.keys(cellData);
+  const greenCount = allKeys.filter(k => cellData[k] === 'green').length;
+
+  document.getElementById('share-card-date').textContent = fmtLong(new Date());
+  document.getElementById('share-card-stats').innerHTML = `
+    <div class="share-stat">
+      <div class="share-stat-val" style="color:#05f58e">${streak}</div>
+      <div class="share-stat-lbl">Day Streak 🔥</div>
+    </div>
+    <div class="share-stat">
+      <div class="share-stat-val" style="color:#ffbe3d">${ws.pct}%</div>
+      <div class="share-stat-lbl">This Week</div>
+    </div>
+    <div class="share-stat">
+      <div class="share-stat-val" style="color:#a08cff">Lv.${current.lvl}</div>
+      <div class="share-stat-lbl">${current.name}</div>
+    </div>
+    <div class="share-stat">
+      <div class="share-stat-val" style="color:#6e56ff">${greenCount}</div>
+      <div class="share-stat-lbl">Green Cells ✓</div>
+    </div>
+  `;
+
+  // Show native share button if supported
+  const nativeBtn = document.getElementById('native-share-btn');
+  if (navigator.share) nativeBtn.style.display = 'flex';
+  else nativeBtn.style.display = 'none';
+
+  document.getElementById('share-modal').classList.add('show');
+}
+
+async function downloadShareImage() {
+  const card = document.getElementById('share-card');
+  showToast('🎨 Generating image...');
+
+  try {
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#0d0e1a',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    const link = document.createElement('a');
+    link.download = `discipline_progress_${isoDate(new Date())}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ Image downloaded!');
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Failed to generate image');
+  }
+}
+
+async function nativeShare() {
+  const card = document.getElementById('share-card');
+  try {
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#0d0e1a',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'discipline_progress.png', { type: 'image/png' });
+      try {
+        await navigator.share({
+          title: 'My Discipline Progress',
+          text: `Check out my discipline streak! 🔥`,
+          files: [file]
+        });
+        showToast('✅ Shared successfully!');
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          // Fallback: download instead
+          downloadShareImage();
+        }
+      }
+    }, 'image/png');
+  } catch (err) {
+    downloadShareImage();
+  }
+}
+
+// ── CALENDAR VIEW ─────────────────────────────────────
+function getCalendarMonth(offset = 0) {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const year = first.getFullYear();
+  const month = first.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDow = first.getDay();
+  const days = [];
+  for (let i = 0; i < startDow; i++) days.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(new Date(year, month, d));
+  }
+  return { year, month, days, first };
+}
+
+function renderCalendar() {
+  const { year, month, days, first } = getCalendarMonth(calendarMonthOffset);
+  const monthLabel = first.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  document.getElementById('calendar-month-label').textContent = monthLabel;
+
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = days.map(d => {
+    if (!d) return `<div class="cal-day empty"></div>`;
+    const stats = dayStats(d);
+    const today = isToday(d);
+    const pctColor = stats.pct >= 80 ? 'var(--green)'
+      : stats.pct >= 55 ? 'rgba(5,245,142,0.7)'
+      : stats.pct >= 40 ? 'var(--amber)'
+      : stats.pct > 0   ? 'var(--red)'
+      : 'var(--text3)';
+
+    const dots = habits.map(h => {
+      const s = getStatus(h.id, d);
+      return `<span class="cal-habit-dot ${s}"></span>`;
+    }).join('');
+
+    return `<div class="cal-day ${today ? 'today' : ''}" onclick="showCalendarDay('${isoDate(d)}')">
+      <div class="cal-day-num">${d.getDate()}</div>
+      <div class="cal-day-dots">${dots}</div>
+      <div class="cal-day-pct" style="color:${pctColor}">${stats.pct > 0 ? stats.pct + '%' : '—'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('calendar-day-detail').innerHTML =
+    `<div style="color:var(--text3);font-style:italic">Click any day to see detailed breakdown</div>`;
+}
+
+function showCalendarDay(dateStr) {
+  const d = new Date(dateStr);
+  const stats = dayStats(d);
+  const detail = document.getElementById('calendar-day-detail');
+  let html = `<div class="cal-detail-title">${DAY_FULL[d.getDay()]}, ${d.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })} · ${stats.pct}%</div>`;
+  habits.forEach(h => {
+    const s = getStatus(h.id, d);
+    html += `<div class="cal-detail-row">
+      <div class="cal-detail-status ${s}">${STATUS_ICONS[s]}</div>
+      <div style="flex:1;font-size:12px;color:var(--text)">${h.name}</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2)">◈ ${h.pts} pts</div>
+    </div>`;
+  });
+  detail.innerHTML = html;
+}
+
+function changeMonth(dir) { calendarMonthOffset += dir; renderCalendar(); }
+function goCalendarToday() { calendarMonthOffset = 0; renderCalendar(); }
+
+// ── MODAL HELPERS ─────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ── TOAST ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 // ── RENDER ROUTER ─────────────────────────────────────
@@ -137,32 +979,29 @@ function renderAll() {
   const dates = getWeekDates(weekOffset);
   updateWeekLabel(dates);
   updateStreakWidget();
-
-  if (activeTab === 'tracker')  renderTracker(dates);
-  if (activeTab === 'tasks')    renderTasks(dates);
-  if (activeTab === 'stats')    renderStats(dates);
-  if (activeTab === 'settings') renderSettings();
+  renderXPWidget();
+  if (activeTab === 'tracker')      renderTracker(dates);
+  if (activeTab === 'tasks')        renderTasks(dates);
+  if (activeTab === 'calendar')     renderCalendar();
+  if (activeTab === 'stats')        renderStats(dates);
+  if (activeTab === 'achievements') renderAchievements();
+  if (activeTab === 'settings')     renderSettings();
 }
-
-// ── WEEK LABEL ────────────────────────────────────────
 function updateWeekLabel(dates) {
   const label = weekOffset === 0 ? 'This Week'
-              : weekOffset === -1 ? 'Last Week'
-              : weekOffset === 1  ? 'Next Week'
-              : `${weekOffset > 0 ? '+' : ''}${weekOffset}w`;
+    : weekOffset === -1 ? 'Last Week'
+    : weekOffset === 1  ? 'Next Week'
+    : `${weekOffset > 0 ? '+' : ''}${weekOffset}w`;
   document.getElementById('week-range').textContent =
-    `${fmtShort(dates[0])} – ${fmtShort(dates[6])}  ·  ${label}`;
+    `${fmtShort(dates[0])} – ${fmtShort(dates[6])} · ${label}`;
 }
-
-// ── STREAK WIDGET ─────────────────────────────────────
 function updateStreakWidget() {
   const { streak } = calcStreak();
   document.getElementById('streak-num').textContent = streak;
 }
 
-// ── QUOTE ─────────────────────────────────────────────
 function setQuote() {
-  const q = QUOTES[new Date().getDate() % QUOTES.length];
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
   document.getElementById('quote-ticker').textContent = `"${q}"`;
 }
 
@@ -171,7 +1010,6 @@ function renderTracker(dates) {
   renderScoreStrip(dates);
   renderHabitTable(dates);
 }
-
 function renderScoreStrip(dates) {
   const ws = weekStats(dates);
   const pctColor = ws.pct >= 70 ? 'var(--green)' : ws.pct >= 40 ? 'var(--amber)' : 'var(--red)';
@@ -195,13 +1033,10 @@ function renderScoreStrip(dates) {
       <div class="val" style="color:${pctColor}">${ws.pct}%</div>
       <div class="lbl">WEEK SCORE</div>
       <div class="sub">Earned / possible pts</div>
-    </div>
-  `;
+    </div>`;
 }
-
 function renderHabitTable(dates) {
   const ds = dates.map(d => dayStats(d));
-
   let head = `<thead><tr>
     <th class="habit-name-th">HABIT / POINTS</th>
     ${dates.map((d, i) => {
@@ -214,9 +1049,7 @@ function renderHabitTable(dates) {
           <span class="day-name-lbl">${DAY_NAMES[d.getDay()]}</span>
           <span class="day-date-lbl">${fmtShort(d)}</span>
           <span class="day-pct-lbl" style="color:${col}">${pct}%</span>
-          <div class="pct-bar-wrap">
-            <div class="pct-bar-fill" style="width:${pct}%;background:${col}"></div>
-          </div>
+          <div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:${pct}%;background:${col}"></div></div>
         </div>
       </th>`;
     }).join('')}
@@ -244,7 +1077,6 @@ function renderHabitTable(dates) {
     </tr>`;
   });
   body += '</tbody>';
-
   document.getElementById('habit-table').innerHTML = head + body;
 }
 
@@ -253,11 +1085,9 @@ function renderTasks(dates) {
   renderTasksGrid(dates);
   renderNotesGrid(dates);
 }
-
 function getTasksForDay(dk) {
   return taskData[dk] || Array.from({ length: 5 }, () => ({ text: '', done: false }));
 }
-
 function renderTasksGrid(dates) {
   document.getElementById('tasks-week-grid').innerHTML = dates.map(d => {
     const dk = isoDate(d);
@@ -272,8 +1102,7 @@ function renderTasksGrid(dates) {
       ${dayTasks.map((t, j) => `
         <div class="task-item">
           <input type="checkbox" class="task-cb" ${t.done ? 'checked' : ''}
-            onchange="toggleTask('${dk}',${j},this.checked)"
-            aria-label="Task ${j+1}">
+            onchange="toggleTask('${dk}',${j},this.checked)">
           <input class="task-text ${t.done ? 'done-text' : ''}"
             value="${(t.text || '').replace(/"/g, '&quot;')}"
             placeholder="Task ${j+1}..."
@@ -282,32 +1111,27 @@ function renderTasksGrid(dates) {
     </div>`;
   }).join('');
 }
-
 function renderNotesGrid(dates) {
   document.getElementById('notes-grid').innerHTML = dates.map(d => {
     const dk = isoDate(d);
     return `<div class="note-wrap">
       <div class="note-day-lbl">${DAY_NAMES[d.getDay()]}</div>
-      <textarea class="note-textarea" rows="4"
-        placeholder="Daily notes..."
+      <textarea class="note-textarea" rows="4" placeholder="Daily notes..."
         oninput="updateNote('${dk}',this.value)">${noteData[dk] || ''}</textarea>
     </div>`;
   }).join('');
 }
-
 function toggleTask(dk, j, checked) {
   if (!taskData[dk]) taskData[dk] = Array.from({ length: 5 }, () => ({ text: '', done: false }));
   taskData[dk][j].done = checked;
   save('ddt_tasks', taskData);
   renderTasks(getWeekDates(weekOffset));
 }
-
 function updateTaskText(dk, j, val) {
   if (!taskData[dk]) taskData[dk] = Array.from({ length: 5 }, () => ({ text: '', done: false }));
   taskData[dk][j].text = val;
   save('ddt_tasks', taskData);
 }
-
 function updateNote(dk, val) {
   noteData[dk] = val;
   save('ddt_notes', noteData);
@@ -316,46 +1140,30 @@ function updateNote(dk, val) {
 // ── STATS TAB ─────────────────────────────────────────
 function renderStats(dates) {
   renderStatsTopCards(dates);
+  renderAIInsights();
+  renderPatterns();
   renderLineChart();
   renderDoughnutChart(dates);
   renderBarChart();
   renderHeatmap();
 }
-
 function renderStatsTopCards(dates) {
   const ws = weekStats(dates);
   const { streak, max } = calcStreak();
-
-  // Total habits tracked (all time)
-  const allKeys = Object.keys(cellData);
-  const totalTracked = allKeys.filter(k => cellData[k] !== 'none').length;
-  const totalGreen   = allKeys.filter(k => cellData[k] === 'green').length;
-  const overallPct   = totalTracked > 0 ? Math.round(totalGreen / totalTracked * 100) : 0;
-
+  const xp = calculateXP();
   document.getElementById('stats-top-cards').innerHTML = `
     <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${streak}</div>
       <div class="stat-lbl">Current Streak</div><div class="stat-sub">days ≥50% score</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${max}</div>
-      <div class="stat-lbl">Best Streak</div><div class="stat-sub">last 90 days</div></div>
+      <div class="stat-lbl">Best Streak</div><div class="stat-sub">last 365 days</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--green)">${ws.pct}%</div>
       <div class="stat-lbl">This Week Score</div><div class="stat-sub">earned / possible</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:var(--text)">${overallPct}%</div>
-      <div class="stat-lbl">All-Time Green</div><div class="stat-sub">${totalTracked} cells marked</div></div>
-  `;
+    <div class="stat-card"><div class="stat-val" style="color:var(--text)">${xp}</div>
+      <div class="stat-lbl">Total XP</div><div class="stat-sub">${unlockedBadges.length}/${BADGES.length} badges</div></div>`;
 }
-
 function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
-
-function chartDefaults() {
-  return {
-    color: '#9090b0',
-    borderColor: 'rgba(255,255,255,0.07)',
-    plugins: { legend: { display: false } }
-  };
-}
-
 function renderLineChart() {
   destroyChart('line');
   const labels = [], pcts = [];
@@ -368,35 +1176,17 @@ function renderLineChart() {
   if (!ctx) return;
   chartInstances['line'] = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data: pcts,
-        borderColor: '#6e56ff',
-        backgroundColor: 'rgba(110,86,255,0.12)',
-        borderWidth: 2.5,
-        pointBackgroundColor: '#6e56ff',
-        pointRadius: 4,
-        tension: 0.38,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ` ${ctx.raw}%` }
-      }},
+    data: { labels, datasets: [{ data: pcts, borderColor: '#6e56ff',
+      backgroundColor: 'rgba(110,86,255,0.12)', borderWidth: 2.5,
+      pointBackgroundColor: '#6e56ff', pointRadius: 4, tension: 0.38, fill: true }] },
+    options: { responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } } },
       scales: {
-        y: { min: 0, max: 100,
-          ticks: { color: '#5a5a7a', font: { size: 11 }, callback: v => v + '%' },
-          grid: { color: 'rgba(255,255,255,0.05)' }
-        },
+        y: { min: 0, max: 100, ticks: { color: '#5a5a7a', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
         x: { ticks: { color: '#5a5a7a', font: { size: 10 } }, grid: { display: false } }
-      }
-    }
+      } }
   });
 }
-
 function renderDoughnutChart(dates) {
   destroyChart('doughnut');
   const ws = weekStats(dates);
@@ -406,30 +1196,15 @@ function renderDoughnutChart(dates) {
   if (total === 0) return;
   chartInstances['doughnut'] = new Chart(ctx, {
     type: 'doughnut',
-    data: {
-      labels: ['Green', 'Amber', 'Red'],
-      datasets: [{
-        data: [ws.tg, ws.ta, ws.tr],
+    data: { labels: ['Green', 'Amber', 'Red'],
+      datasets: [{ data: [ws.tg, ws.ta, ws.tr],
         backgroundColor: ['rgba(5,245,142,0.75)', 'rgba(255,190,61,0.75)', 'rgba(255,77,106,0.75)'],
-        borderColor: ['#05f58e', '#ffbe3d', '#ff4d6a'],
-        borderWidth: 1.5
-      }]
-    },
-    options: {
-      responsive: true,
-      cutout: '65%',
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
-          labels: { color: '#9090b0', font: { size: 11 }, padding: 12, boxWidth: 10 }
-        },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } }
-      }
-    }
+        borderColor: ['#05f58e', '#ffbe3d', '#ff4d6a'], borderWidth: 1.5 }] },
+    options: { responsive: true, cutout: '65%',
+      plugins: { legend: { display: true, position: 'bottom',
+        labels: { color: '#9090b0', font: { size: 11 }, padding: 12, boxWidth: 10 } } } }
   });
 }
-
 function renderBarChart() {
   destroyChart('bar');
   const today = new Date();
@@ -448,43 +1223,25 @@ function renderBarChart() {
   if (!ctx) return;
   chartInstances['bar'] = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: habits.map(h => h.name.length > 20 ? h.name.slice(0, 20) + '…' : h.name),
-      datasets: [{
-        data: pcts,
-        backgroundColor: pcts.map(p =>
-          p >= 70 ? 'rgba(5,245,142,0.65)' :
-          p >= 40 ? 'rgba(255,190,61,0.65)' :
-                    'rgba(255,77,106,0.65)'
-        ),
-        borderRadius: 6,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ` ${ctx.raw}%` }
-      }},
+    data: { labels: habits.map(h => h.name.length > 20 ? h.name.slice(0, 20) + '…' : h.name),
+      datasets: [{ data: pcts,
+        backgroundColor: pcts.map(p => p >= 70 ? 'rgba(5,245,142,0.65)' : p >= 40 ? 'rgba(255,190,61,0.65)' : 'rgba(255,77,106,0.65)'),
+        borderRadius: 6, borderSkipped: false }] },
+    options: { responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } } },
       scales: {
-        y: { min: 0, max: 100,
-          ticks: { color: '#5a5a7a', font: { size: 11 }, callback: v => v + '%' },
-          grid: { color: 'rgba(255,255,255,0.05)' }
-        },
+        y: { min: 0, max: 100, ticks: { color: '#5a5a7a', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
         x: { ticks: { color: '#5a5a7a', font: { size: 10 }, maxRotation: 28 }, grid: { display: false } }
-      }
-    }
+      } }
   });
 }
-
 function renderHeatmap() {
   const today = new Date();
-  const days  = [];
+  const days = [];
   for (let i = 89; i >= 0; i--) {
     const d = new Date(today); d.setDate(today.getDate() - i);
     days.push({ date: d, pct: dayStats(d).pct });
   }
-  // Split into rows of 7
   const rows = [];
   for (let r = 0; r < Math.ceil(days.length / 7); r++) {
     rows.push(days.slice(r * 7, r * 7 + 7));
@@ -494,26 +1251,21 @@ function renderHeatmap() {
     pct >= 55 ? 'rgba(5,245,142,0.45)' :
     pct >= 30 ? 'var(--amber)' :
     pct >  0  ? 'rgba(255,77,106,0.55)' :
-                'rgba(255,255,255,0.05)';
-
-  const html = `
-    <div class="heatmap-grid">
-      ${rows.map(row => `
-        <div class="heatmap-row-wrap">
-          <span class="heatmap-week-lbl">${fmtShort(row[0])}</span>
-          ${row.map(cell => `
-            <div class="heatmap-cell" style="background:${getColor(cell.pct)}"
-              title="${fmtShort(cell.date)} — ${cell.pct}%"></div>
-          `).join('')}
-        </div>`).join('')}
-    </div>
-    <div class="heatmap-legend">
-      <span><span class="hl-dot" style="background:var(--green)"></span>80%+</span>
-      <span><span class="hl-dot" style="background:rgba(5,245,142,0.45)"></span>55–79%</span>
-      <span><span class="hl-dot" style="background:var(--amber)"></span>30–54%</span>
-      <span><span class="hl-dot" style="background:rgba(255,77,106,0.55)"></span>1–29%</span>
-      <span><span class="hl-dot" style="background:rgba(255,255,255,0.05)"></span>No data</span>
-    </div>`;
+    'rgba(255,255,255,0.05)';
+  const html = `<div class="heatmap-grid">
+    ${rows.map(row => `<div class="heatmap-row-wrap">
+      <span class="heatmap-week-lbl">${fmtShort(row[0])}</span>
+      ${row.map(cell => `<div class="heatmap-cell" style="background:${getColor(cell.pct)}"
+        title="${fmtShort(cell.date)} — ${cell.pct}%"></div>`).join('')}
+    </div>`).join('')}
+  </div>
+  <div class="heatmap-legend">
+    <span><span class="hl-dot" style="background:var(--green)"></span>80%+</span>
+    <span><span class="hl-dot" style="background:rgba(5,245,142,0.45)"></span>55–79%</span>
+    <span><span class="hl-dot" style="background:var(--amber)"></span>30–54%</span>
+    <span><span class="hl-dot" style="background:rgba(255,77,106,0.55)"></span>1–29%</span>
+    <span><span class="hl-dot" style="background:rgba(255,255,255,0.05)"></span>No data</span>
+  </div>`;
   document.getElementById('heatmap-container').innerHTML = html;
 }
 
@@ -522,30 +1274,25 @@ function renderSettings() {
   const list = document.getElementById('habits-edit-list');
   list.innerHTML = habits.map((h, i) => `
     <div class="habit-edit-row">
-      <input class="s-input" style="flex:1;min-width:100px"
-        value="${h.name}" oninput="updateHabitField(${i},'name',this.value)"
-        aria-label="Habit name">
-      <input class="s-input pts-input" type="number" value="${h.pts}"
-        min="1" max="10" oninput="updateHabitField(${i},'pts',+this.value)"
-        aria-label="Points">
-      <button class="s-btn danger icon-btn" onclick="deleteHabit(${i})"
-        aria-label="Delete habit" title="Delete">
+      <input class="s-input" style="flex:1;min-width:100px" value="${h.name}"
+        oninput="updateHabitField(${i},'name',this.value)">
+      <input class="s-input pts-input" type="number" value="${h.pts}" min="1" max="10"
+        oninput="updateHabitField(${i},'pts',+this.value)">
+      <button class="s-btn danger icon-btn" onclick="deleteHabit(${i})" title="Delete">
         <i class="fa-solid fa-trash"></i>
       </button>
     </div>`).join('');
-
-  // Data info
-  const totalKeys = Object.keys(cellData).length;
-  const greenCount = Object.values(cellData).filter(v => v === 'green').length;
+  const xp = calculateXP();
   document.getElementById('data-info').innerHTML =
-    `Total cells tracked: ${totalKeys}<br>Green: ${greenCount} · Amber: ${Object.values(cellData).filter(v=>v==='amber').length} · Red: ${Object.values(cellData).filter(v=>v==='red').length}<br>Task entries: ${Object.keys(taskData).length} days`;
+    `Total XP: ${xp} · Level: Lv.${getLevelInfo(xp).current.lvl}<br>
+     Badges unlocked: ${unlockedBadges.length}/${BADGES.length}<br>
+     Total cells tracked: ${Object.keys(cellData).length}<br>
+     Task entries: ${Object.keys(taskData).length} days`;
 }
-
 function updateHabitField(i, field, val) {
   habits[i][field] = val;
   save('ddt_habits', habits);
 }
-
 function deleteHabit(i) {
   if (habits.length <= 1) return alert('Keep at least 1 habit.');
   if (!confirm(`Delete "${habits[i].name}"?`)) return;
@@ -553,7 +1300,6 @@ function deleteHabit(i) {
   save('ddt_habits', habits);
   renderAll();
 }
-
 function addHabit() {
   const name = document.getElementById('new-habit-name').value.trim();
   const pts  = parseInt(document.getElementById('new-habit-pts').value) || 3;
@@ -564,7 +1310,7 @@ function addHabit() {
   renderAll();
 }
 
-// ── EXPORTS ───────────────────────────────────────────
+// ── CSV EXPORT ────────────────────────────────────────
 function buildCSV(dates) {
   const cols = dates.map(d => `${DAY_NAMES[d.getDay()]} ${fmtShort(d)}`);
   let csv = 'Habit,Points,' + cols.join(',') + '\n';
@@ -579,17 +1325,14 @@ function buildCSV(dates) {
   csv += 'Red,,'         + dates.map(d => dayStats(d).r).join(',') + '\n';
   return csv;
 }
-
 function exportCSV() {
   const dates = getWeekDates(weekOffset);
   downloadCSV(buildCSV(dates), `discipline_week_${isoDate(dates[0])}.csv`);
+  showToast('📥 Week exported');
 }
-
 function exportAllCSV() {
-  // Gather all unique week start dates from data
   const keys = Object.keys(cellData);
   if (!keys.length) return alert('No data to export.');
-  // Build 12 weeks of data
   let allCSV = 'DAILY DISCIPLINE TRACKER — ALL DATA\n\n';
   for (let w = 11; w >= 0; w--) {
     const dates = getWeekDates(-w);
@@ -598,8 +1341,8 @@ function exportAllCSV() {
     allCSV += '\n';
   }
   downloadCSV(allCSV, `discipline_all_${isoDate(new Date())}.csv`);
+  showToast('📥 All data exported');
 }
-
 function downloadCSV(content, filename) {
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
@@ -612,46 +1355,71 @@ function resetWeek() {
   if (!confirm('Reset ALL habit data for this week?')) return;
   const dates = getWeekDates(weekOffset);
   dates.forEach(d => {
-    habits.forEach(h => {
-      delete cellData[`${isoDate(d)}_${h.id}`];
-    });
+    habits.forEach(h => { delete cellData[`${isoDate(d)}_${h.id}`]; });
   });
   save('ddt_data', cellData);
   renderAll();
 }
-
 function clearAllData() {
-  if (!confirm('Delete ALL tracker data permanently? This cannot be undone.')) return;
+  if (!confirm('Delete ALL tracker data permanently?')) return;
   cellData = {}; taskData = {}; noteData = {};
-  save('ddt_data', cellData); save('ddt_tasks', taskData); save('ddt_notes', noteData);
+  unlockedBadges = []; lastLevel = 1; hadBrokenStreak = false;
+  save('ddt_data', cellData);
+  save('ddt_tasks', taskData);
+  save('ddt_notes', noteData);
+  save('ddt_badges', unlockedBadges);
+  save('ddt_lastlevel', lastLevel);
+  save('ddt_hadbroken', hadBrokenStreak);
   renderAll();
 }
 
 // ── NAVIGATION ────────────────────────────────────────
 function changeWeek(dir) { weekOffset += dir; renderAll(); }
-function goToday()       { weekOffset = 0;    renderAll(); }
-
+function goToday()       { weekOffset = 0; renderAll(); }
 function switchTab(tab, el) {
   activeTab = tab;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   el.classList.add('active');
-
-  const titles = { tracker: 'Weekly Tracker', tasks: 'Daily Tasks', stats: 'Analytics', settings: 'Settings' };
+  const titles = {
+    tracker: 'Weekly Tracker', tasks: 'Daily Tasks', calendar: 'Calendar View',
+    stats: 'Analytics', achievements: 'Achievements', settings: 'Settings'
+  };
   document.getElementById('page-title').textContent = titles[tab];
-
-  // Destroy charts before re-render to avoid canvas reuse error
-  if (tab === 'stats') {
-    ['line','doughnut','bar'].forEach(destroyChart);
-  }
+  const weekCtrl = document.getElementById('week-controls');
+  weekCtrl.style.display = (tab === 'tracker' || tab === 'tasks') ? 'flex' : 'none';
+  if (tab === 'stats') { ['line','doughnut','bar'].forEach(destroyChart); }
   renderAll();
 }
-
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// ── INIT ─────────────────────────────────────────────
+// ── KEYBOARD SHORTCUTS ────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') {
+    closeModal('report-modal');
+    closeModal('share-modal');
+    closeAchPopup();
+    closeLevelUpPopup();
+  }
+  if (activeTab === 'tracker' || activeTab === 'tasks') {
+    if (e.key === 'ArrowLeft')  changeWeek(-1);
+    if (e.key === 'ArrowRight') changeWeek(1);
+    if (e.key === 't' || e.key === 'T') goToday();
+  }
+  if (activeTab === 'calendar') {
+    if (e.key === 'ArrowLeft')  changeMonth(-1);
+    if (e.key === 'ArrowRight') changeMonth(1);
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────
 setQuote();
 renderAll();
+checkProgression();
+checkAutoReport();
+// Check auto-report every minute
+setInterval(checkAutoReport, 60000);
