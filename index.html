@@ -26,7 +26,7 @@
   </div>
 
   <!-- XP & LEVEL WIDGET -->
-  <div class="sidebar-xp" id="sidebar-xp">
+  <div class="sidebar-xp">
     <div class="xp-header">
       <span class="xp-level-badge" id="xp-level-badge">Lv.1</span>
       <span class="xp-level-name" id="xp-level-name">Novice</span>
@@ -69,13 +69,25 @@
       </button>
       <h1 class="page-title" id="page-title">Weekly Tracker</h1>
       <div class="week-controls" id="week-controls">
-        <button class="week-btn" onclick="changeWeek(-1)" aria-label="Previous week"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="week-btn" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
         <span class="week-range" id="week-range">—</span>
-        <button class="week-btn" onclick="changeWeek(1)" aria-label="Next week"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="week-btn" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
         <button class="today-btn" onclick="goToday()">TODAY</button>
+        <button class="focus-btn" id="focus-btn" onclick="toggleFocusMode()" title="Focus Mode — Today only">
+          <i class="fa-solid fa-bullseye"></i>
+        </button>
       </div>
     </div>
     <div class="top-right">
+      <button class="icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+      </button>
+      <button class="icon-btn" id="sound-toggle" onclick="toggleSound()" title="Toggle sounds">
+        <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+      </button>
+      <button class="icon-btn" id="notif-btn" onclick="toggleNotifications()" title="Toggle notifications">
+        <i class="fa-solid fa-bell" id="notif-icon"></i>
+      </button>
       <button class="action-btn" onclick="showWeeklyReport()" title="Weekly Report">
         <i class="fa-solid fa-file-lines"></i><span>Report</span>
       </button>
@@ -105,7 +117,7 @@
       <div class="legend-item"><span class="leg-dot amber"></span> Partial — Half points</div>
       <div class="legend-item"><span class="leg-dot red"></span> Skipped — 0 points</div>
       <div class="legend-item"><span class="leg-dot none"></span> Not marked</div>
-      <div class="legend-hint">Click any cell to cycle status</div>
+      <div class="legend-hint">Left-click to cycle • Right-click to add note</div>
     </div>
   </section>
 
@@ -149,14 +161,14 @@
   <section class="tab-content" id="tab-stats">
     <div class="stats-top-cards" id="stats-top-cards"></div>
 
-    <!-- AI COACH SECTION (NEW) -->
+    <!-- AI COACH -->
     <div class="ai-section">
       <div class="ai-section-header">
         <div>
           <h2 class="section-heading"><i class="fa-solid fa-robot" style="color:var(--accent2)"></i> AI Coach</h2>
           <p class="section-sub">Personalized insights based on your last 30 days of data</p>
         </div>
-        <button class="s-btn primary" onclick="renderAIInsights()" title="Refresh insights">
+        <button class="s-btn primary" onclick="renderAIInsights()">
           <i class="fa-solid fa-rotate"></i> Refresh
         </button>
       </div>
@@ -218,6 +230,10 @@
         <div class="data-actions">
           <button class="s-btn primary" onclick="exportCSV()"><i class="fa-solid fa-download"></i> Export This Week CSV</button>
           <button class="s-btn primary" onclick="exportAllCSV()"><i class="fa-solid fa-file-export"></i> Export All Data CSV</button>
+          <label class="s-btn primary" style="cursor:pointer">
+            <i class="fa-solid fa-upload"></i> Import CSV
+            <input type="file" accept=".csv" onchange="importCSV(event)" style="display:none">
+          </label>
           <button class="s-btn primary" onclick="showWeeklyReport()"><i class="fa-solid fa-file-lines"></i> Generate Weekly Report</button>
           <button class="s-btn danger" onclick="resetWeek()"><i class="fa-solid fa-rotate-left"></i> Reset This Week</button>
           <button class="s-btn danger" onclick="clearAllData()"><i class="fa-solid fa-trash"></i> Clear All Data</button>
@@ -227,6 +243,19 @@
     </div>
   </section>
 </main>
+
+<!-- CELL NOTE POPUP -->
+<div class="note-popup" id="note-popup">
+  <div class="note-popup-header">
+    <span id="note-popup-title">Note</span>
+    <button class="note-popup-close" onclick="closeNotePopup()">×</button>
+  </div>
+  <textarea id="note-popup-text" placeholder="Why? What happened?..." rows="3"></textarea>
+  <div class="note-popup-actions">
+    <button class="s-btn danger" onclick="deleteCellNote()"><i class="fa-solid fa-trash"></i> Delete</button>
+    <button class="s-btn primary" onclick="saveCellNote()"><i class="fa-solid fa-check"></i> Save</button>
+  </div>
+</div>
 
 <!-- ACHIEVEMENT UNLOCK POPUP -->
 <div class="ach-popup" id="ach-popup">
@@ -250,7 +279,7 @@
   </div>
 </div>
 
-<!-- WEEKLY REPORT MODAL (NEW) -->
+<!-- WEEKLY REPORT MODAL -->
 <div class="modal" id="report-modal">
   <div class="modal-inner report-modal-inner">
     <div class="modal-header">
@@ -269,7 +298,7 @@
   </div>
 </div>
 
-<!-- SHARE MODAL (NEW) -->
+<!-- SHARE MODAL -->
 <div class="modal" id="share-modal">
   <div class="modal-inner share-modal-inner">
     <div class="modal-header">
@@ -279,7 +308,7 @@
       </div>
       <button class="modal-close" onclick="closeModal('share-modal')">×</button>
     </div>
-    <div class="share-card-preview" id="share-card-preview">
+    <div class="share-card-preview">
       <div class="share-card" id="share-card">
         <div class="share-card-header">
           <div class="share-card-logo">◈ DISCIPLINE</div>
