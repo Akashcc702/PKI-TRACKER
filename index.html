@@ -17,13 +17,11 @@
   <div class="noise-overlay"></div>
   <div class="grid-bg"></div>
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <span class="logo-icon">🔥</span>
       <span class="logo-text">DISCIPLINE</span>
     </div>
-    
     <nav class="sidebar-nav">
       <button class="nav-item active" onclick="switchTab('tracker', this)">
         <i class="fa-solid fa-calendar-check"></i> Daily Tracker
@@ -41,13 +39,12 @@
         <i class="fa-solid fa-trophy"></i> Achievements
       </button>
       <button class="nav-item" onclick="switchTab('leaderboard', this)">
-        <i class="fa-solid fa-trophy"></i> Leaderboard
+        <i class="fa-solid fa-ranking-star"></i> Leaderboard
       </button>
       <button class="nav-item" onclick="switchTab('settings', this)">
         <i class="fa-solid fa-gear"></i> Settings
       </button>
     </nav>
-
     <div class="sidebar-footer">
       <div class="sidebar-streak">
         <span class="streak-fire">🔥</span>
@@ -59,17 +56,12 @@
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
   <main class="main-content">
-    <!-- TOP BAR -->
     <header class="top-bar">
       <div class="top-left">
-        <button class="hamburger" onclick="toggleSidebar()">
-          <span></span><span></span><span></span>
-        </button>
+        <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
         <h1 class="page-title" id="page-title">Weekly Tracker</h1>
       </div>
-      
       <div class="top-right" style="display:flex;align-items:center;gap:12px">
         <div class="week-controls" id="week-controls">
           <button class="week-btn" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
@@ -77,23 +69,14 @@
           <button class="week-btn" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
           <button class="today-btn" onclick="goToday()">TODAY</button>
         </div>
-        
-        <button class="export-btn" onclick="showWeeklyReport()">
-          <i class="fa-solid fa-file-lines"></i> <span>Report</span>
-        </button>
-        <button class="export-btn" onclick="openShareModal()">
-          <i class="fa-solid fa-share-nodes"></i> <span>Share</span>
-        </button>
-        <button class="export-btn" onclick="exportCSV()">
-          <i class="fa-solid fa-download"></i> <span>Export</span>
-        </button>
+        <button class="export-btn" onclick="showWeeklyReport()"><i class="fa-solid fa-file-lines"></i> <span>Report</span></button>
+        <button class="export-btn" onclick="openShareModal()"><i class="fa-solid fa-share-nodes"></i> <span>Share</span></button>
+        <button class="export-btn" onclick="exportCSV()"><i class="fa-solid fa-download"></i> <span>Export</span></button>
       </div>
     </header>
 
-    <!-- QUOTE TICKER -->
     <div class="quote-ticker" id="quote-ticker">"Discipline is the bridge between goals and accomplishment."</div>
 
-    <!-- XP WIDGET -->
     <div style="padding:12px 24px;background:rgba(110,86,255,0.08);border-bottom:1px solid rgba(110,86,255,0.15)">
       <div style="display:flex;align-items:center;gap:12px;max-width:400px">
         <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--font-mono);color:#fff" id="xp-level-badge">Lv.1</div>
@@ -110,9 +93,6 @@
       </div>
     </div>
 
-    <!-- TAB CONTENTS -->
-    
-    <!-- TRACKER TAB -->
     <div id="tab-tracker" class="tab-content active">
       <div class="score-strip" id="score-strip"></div>
       <div class="grid-container">
@@ -125,12 +105,11 @@
           <div class="legend-item"><span class="leg-dot amber"></span> Partial — Half points</div>
           <div class="legend-item"><span class="leg-dot red"></span> Skipped — 0 points</div>
           <div class="legend-item"><span class="leg-dot none"></span> Not marked</div>
-          <div class="legend-hint">Left-click to cycle • Right-click to add note</div>
+          <div class="legend-hint">Left-click to cycle • Right-click to add note • <span style="color:var(--amber);font-weight:600"> Only TODAY editable</span></div>
         </div>
       </div>
     </div>
 
-    <!-- TASKS TAB -->
     <div id="tab-tasks" class="tab-content">
       <div class="tasks-header">
         <h2 class="section-heading">5 Daily Achieve Tasks</h2>
@@ -144,7 +123,6 @@
       </div>
     </div>
 
-    <!-- CALENDAR TAB -->
     <div id="tab-calendar" class="tab-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <div>
@@ -165,10 +143,8 @@
       </div>
     </div>
 
-    <!-- STATS TAB -->
     <div id="tab-stats" class="tab-content">
       <div class="stats-top-cards" id="stats-top-cards"></div>
-      
       <div style="margin-bottom:20px">
         <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">
           <i class="fa-solid fa-robot" style="color:var(--accent2);margin-right:6px"></i> AI Coach
@@ -176,7 +152,6 @@
         <p class="section-sub" style="margin-bottom:12px">Personalized insights based on your last 30 days of data</p>
         <div id="ai-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
       </div>
-
       <div style="margin-bottom:20px">
         <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">
           <i class="fa-solid fa-brain" style="color:var(--accent2);margin-right:6px"></i> Smart Patterns
@@ -184,7 +159,6 @@
         <p class="section-sub" style="margin-bottom:12px">Auto-detected patterns from your data</p>
         <div id="pattern-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
       </div>
-
       <div class="charts-row">
         <div class="chart-card" style="flex:1">
           <div class="chart-card-title">Weekly Performance (Last 8 Weeks)</div>
@@ -195,7 +169,6 @@
           <canvas id="doughnut-chart"></canvas>
         </div>
       </div>
-      
       <div class="charts-row" style="margin-top:16px">
         <div class="chart-card" style="flex:1">
           <div class="chart-card-title">Habit Completion Rate — Last 30 Days</div>
@@ -208,29 +181,26 @@
       </div>
     </div>
 
-    <!-- ACHIEVEMENTS TAB -->
     <div id="tab-achievements" class="tab-content">
       <div style="margin-bottom:20px">
-        <h2 class="section-heading">Achievements</h2>
-        <p class="section-sub" id="ach-progress-label">0 / 10 unlocked</p>
+        <h2 class="section-heading"> Achievements</h2>
+        <p class="section-sub" id="ach-progress-label">0 / 25 unlocked</p>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">Journey to 10,000 days of discipline — earn through hard work!</p>
       </div>
       <div class="ach-grid" id="ach-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
     </div>
 
-    <!-- LEADERBOARD TAB -->
     <div id="tab-leaderboard" class="tab-content">
       <div class="leaderboard-container">
         <div class="leaderboard-header">
-          <h2 class="section-heading"> Global Leaderboard</h2>
+          <h2 class="section-heading">🌍 Global Leaderboard</h2>
           <p class="section-sub">Compete with others and climb the ranks!</p>
         </div>
-        
         <div class="leaderboard-filters">
           <button class="lb-filter-btn active" onclick="setLeaderboardPeriod('weekly', this)">This Week</button>
           <button class="lb-filter-btn" onclick="setLeaderboardPeriod('monthly', this)">This Month</button>
           <button class="lb-filter-btn" onclick="setLeaderboardPeriod('alltime', this)">All Time</button>
         </div>
-
         <div class="leaderboard-rank-info">
           <div class="rank-card">
             <div class="rank-icon"></div>
@@ -241,7 +211,7 @@
             </div>
           </div>
           <div class="rank-card">
-            <div class="rank-icon"></div>
+            <div class="rank-icon">🎯</div>
             <div class="rank-details">
               <div class="rank-label">To Top 10</div>
               <div class="rank-value" id="xp-needed">-- XP</div>
@@ -257,21 +227,18 @@
             </div>
           </div>
         </div>
-
         <div class="leaderboard-list" id="leaderboard-list"></div>
-
         <div class="leaderboard-refresh">
           <button class="s-btn primary" onclick="refreshLeaderboard()">
             <i class="fa-solid fa-rotate"></i> Refresh Rankings
           </button>
-          <p style="font-size: 11px; color: var(--text3); margin-top: 8px;">
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">
             * Rankings update every hour. Fake competitors simulate real competition!
           </p>
         </div>
       </div>
     </div>
 
-    <!-- SETTINGS TAB -->
     <div id="tab-settings" class="tab-content">
       <div class="settings-grid">
         <div class="settings-card">
@@ -287,7 +254,6 @@
             </button>
           </div>
         </div>
-
         <div class="settings-card">
           <div class="settings-card-title">
             <i class="fa-solid fa-database"></i> Data Management
@@ -319,10 +285,8 @@
     </div>
   </main>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- ACHIEVEMENT POPUP -->
   <div class="popup ach-popup" id="ach-popup">
     <div class="popup-content">
       <div class="ach-popup-icon" id="ach-popup-icon">🏆</div>
@@ -332,7 +296,6 @@
     </div>
   </div>
 
-  <!-- LEVEL UP POPUP -->
   <div class="popup levelup-popup" id="levelup-popup">
     <div class="popup-content">
       <div class="levelup-icon">⭐</div>
@@ -343,7 +306,6 @@
     </div>
   </div>
 
-  <!-- NOTE POPUP -->
   <div class="popup note-popup" id="note-popup">
     <div class="popup-content">
       <h3 class="note-popup-title" id="note-popup-title">Note</h3>
@@ -355,7 +317,6 @@
     </div>
   </div>
 
-  <!-- REPORT MODAL -->
   <div class="modal" id="report-modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -365,22 +326,17 @@
       </div>
       <div class="modal-body" id="report-content"></div>
       <div class="modal-footer">
-        <button class="s-btn primary" onclick="copyReport()">
-          <i class="fa-solid fa-copy"></i> Copy
-        </button>
-        <button class="s-btn primary" onclick="downloadReport()">
-          <i class="fa-solid fa-download"></i> Download .md
-        </button>
+        <button class="s-btn primary" onclick="copyReport()"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button class="s-btn primary" onclick="downloadReport()"><i class="fa-solid fa-download"></i> Download .md</button>
         <button class="s-btn" onclick="closeModal('report-modal')">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- SHARE MODAL -->
   <div class="modal" id="share-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3> Share Your Progress</h3>
+        <h3>📤 Share Your Progress</h3>
         <span>Generate a beautiful image to share</span>
         <button class="modal-close" onclick="closeModal('share-modal')">×</button>
       </div>
@@ -398,12 +354,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="s-btn primary" onclick="downloadShareImage()">
-          <i class="fa-solid fa-download"></i> Download PNG
-        </button>
-        <button class="s-btn primary" id="native-share-btn" onclick="nativeShare()">
-          <i class="fa-solid fa-share-nodes"></i> Share
-        </button>
+        <button class="s-btn primary" onclick="downloadShareImage()"><i class="fa-solid fa-download"></i> Download PNG</button>
+        <button class="s-btn primary" id="native-share-btn" onclick="nativeShare()"><i class="fa-solid fa-share-nodes"></i> Share</button>
         <button class="s-btn" onclick="closeModal('share-modal')">Close</button>
       </div>
     </div>
