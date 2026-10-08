@@ -49,6 +49,9 @@ const TelegramSync = {
     localStorage.setItem(this.STORAGE_KEYS.LAST_OPENED, today);
     localStorage.setItem(this.STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
     this.syncDailyState();
+    try {
+      fetch('/api/notify?action=open').catch(() => {});
+    } catch(e) {}
   },
 
   /**
@@ -110,6 +113,9 @@ const TelegramSync = {
 
     localStorage.setItem('pki_tracker_live_state', JSON.stringify(state));
     this.updateUIStatusBanner();
+    try {
+      fetch(`/api/notify?action=sync&pending=${stats.pending}&filled=${stats.filled}`).catch(() => {});
+    } catch(e) {}
     return state;
   },
 
@@ -225,14 +231,39 @@ window.saveTelegramSettings = function() {
 
   TelegramSync.saveConfig(token, chatId, true, webUrl);
   TelegramSync.updateUIStatusBanner();
+
+  // Sync to Cloud Function KV
+  try {
+    fetch('/api/notify?action=save_config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, chat_id: chatId, web_url: webUrl })
+    }).then(res => res.json()).then(data => {
+      console.log('Cloud settings sync:', data);
+    }).catch(() => {});
+  } catch(e) {}
+
   if (typeof showToast === 'function') {
-    showToast('💾 Telegram settings saved!');
+    showToast('💾 Settings saved to Browser & Cloud!');
   } else {
-    alert('Telegram settings saved!');
+    alert('Settings saved to Browser & Cloud!');
   }
 };
 
-window.testTelegramAlert = function() {
+window.testTelegramAlert = async function() {
+  if (typeof showToast === 'function') showToast('🚀 Dispatching Test Alert...');
+  try {
+    const res = await fetch('/api/notify?action=test');
+    const data = await res.json();
+    if (data.ok && data.telegram && data.telegram.ok) {
+      if (typeof showToast === 'function') {
+        showToast('✅ Cloud Telegram Test Alert Sent!');
+      } else {
+        alert('✅ Cloud Telegram Test Alert Sent! Check your Telegram.');
+      }
+      return;
+    }
+  } catch(e) {}
   TelegramSync.testNotification();
 };
 
