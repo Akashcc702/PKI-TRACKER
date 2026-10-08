@@ -206,6 +206,7 @@ function cycleStatus(habitId, dateStr) {
 
   renderAll();
   checkProgression();
+  if (window.TelegramSync) window.TelegramSync.onHabitUpdated();
 }
 
 // ── SOUND EFFECTS ─────────────────────────────────────
@@ -1509,6 +1510,8 @@ function renderSettings() {
      Total cells tracked: ${Object.keys(cellData).length}<br>
      Cell notes: ${Object.keys(cellNotes).length}<br>
      Task entries: ${Object.keys(taskData).length} days`;
+
+  if (window.TelegramSync) window.TelegramSync.loadIntoUI();
 }
 
 function updateHabitField(i, field, val) {

@@ -12,6 +12,27 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link rel="stylesheet" href="styles.css">
+  <!-- OneSignal Web Push SDK -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "8b464609-3bac-45ac-ab5d-f0f98ea93f32",
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        notifyButton: {
+          enable: true
+        },
+        allowLocalhostAsSecureOrigin: true
+      });
+      try {
+        OneSignal.Slidedown.promptPush();
+      } catch (err) {
+        console.warn("OneSignal prompt notice:", err);
+      }
+    });
+  </script>
 </head>
 <body>
   <div class="noise-overlay"></div>
@@ -281,6 +302,60 @@
           </div>
           <div class="data-info" id="data-info"></div>
         </div>
+        <div class="settings-card">
+          <div class="settings-card-title">
+            <i class="fa-solid fa-bell" style="color:var(--accent)"></i> Smart Notifications (OneSignal + Telegram)
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">
+            Automated notifications active on both <b>Direct Browser Push</b> and <b>Telegram</b>:<br>
+            • <b>09:00 AM – 10:00 AM</b>: Open website reminder (every 10m until opened)<br>
+            • <b>09:00 PM onwards</b>: Unfilled activity reminder (every 10m until filled)
+          </p>
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <i class="fa-solid fa-globe" style="color:#e11d48"></i> 1. Direct Browser Push Notifications (OneSignal)
+            </div>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:8px">
+              App ID: <code style="color:var(--accent2);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px">8b464609-3bac-45ac-ab5d-f0f98ea93f32</code>
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="OneSignalDeferred.push(function(OneSignal) { OneSignal.Slidedown.promptPush(); })">
+                <i class="fa-solid fa-bell"></i> Enable Browser Push (OneSignal)
+              </button>
+              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="testBrowserNotification()">
+                <i class="fa-solid fa-circle-check"></i> Test Local Pop-Up
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
+              <i class="fa-brands fa-telegram" style="color:#229ED9"></i> 2. Telegram Messenger Alerts
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Bot Token</label>
+              <input class="s-input" id="tg-bot-token" type="password" placeholder="e.g. 7123456789:AAFn8...">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Chat ID</label>
+              <input class="s-input" id="tg-chat-id" placeholder="e.g. 123456789">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Website URL (For Action Buttons)</label>
+              <input class="s-input" id="tg-web-url" placeholder="https://ccfocusboard.netlify.app">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+              <button class="s-btn primary" onclick="saveTelegramSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> Save Settings
+              </button>
+              <button class="s-btn" style="border:1px solid #229ED9;color:#229ED9" onclick="testTelegramAlert()">
+                <i class="fa-solid fa-paper-plane"></i> Send Test Alert
+              </button>
+            </div>
+            <div id="tg-status-banner" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -361,6 +436,7 @@
     </div>
   </div>
 
+  <script src="telegram-sync.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
