@@ -155,6 +155,129 @@ function load(key, fallback) {
 
 function save(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  if (typeof scheduleCloudPush === 'function') {
+    scheduleCloudPush();
+  }
+}
+
+// ── CROSS-DEVICE CLOUD SYNC ENGINE (0 COST) ───────────
+let cloudSyncTimer = null;
+let isApplyingCloudSync = false;
+let lastCloudUpdatedAt = localStorage.getItem('ddt_cloud_updated_at') || '';
+
+function getFullTrackerPayload() {
+  return {
+    habits,
+    cellData,
+    cellNotes,
+    taskData,
+    noteData,
+    unlockedBadges,
+    lastLevel,
+    hadBrokenStreak,
+    lastReportWeek
+  };
+}
+
+function scheduleCloudPush() {
+  if (isApplyingCloudSync) return;
+  updateCloudStatusUI('syncing');
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(pushToCloud, 800);
+}
+
+async function pushToCloud() {
+  try {
+    const payload = getFullTrackerPayload();
+    const res = await fetch('/api/notify?action=push_data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'push_data', data: payload })
+    });
+    const result = await res.json();
+    if (result && result.ok) {
+      lastCloudUpdatedAt = result.updatedAt || new Date().toISOString();
+      localStorage.setItem('ddt_cloud_updated_at', lastCloudUpdatedAt);
+      updateCloudStatusUI('synced');
+    } else {
+      updateCloudStatusUI('error');
+    }
+  } catch (err) {
+    console.warn('Cloud sync push:', err);
+    updateCloudStatusUI('offline');
+  }
+}
+
+async function pullFromCloud(isInitial = false) {
+  updateCloudStatusUI('syncing');
+  try {
+    const res = await fetch('/api/notify?action=pull_data');
+    const result = await res.json();
+    if (result && result.ok && result.data) {
+      const c = result.data;
+      const cloudTime = new Date(c.updatedAt || 0).getTime();
+      const localTime = new Date(lastCloudUpdatedAt || 0).getTime();
+      const hasLocalData = Object.keys(cellData).length > 0;
+
+      if (!hasLocalData || cloudTime > localTime) {
+        isApplyingCloudSync = true;
+        if (c.habits && Array.isArray(c.habits) && c.habits.length) habits = c.habits;
+        if (c.cellData && typeof c.cellData === 'object') cellData = c.cellData;
+        if (c.cellNotes && typeof c.cellNotes === 'object') cellNotes = c.cellNotes;
+        if (c.taskData && typeof c.taskData === 'object') taskData = c.taskData;
+        if (c.noteData && typeof c.noteData === 'object') noteData = c.noteData;
+        if (c.unlockedBadges && Array.isArray(c.unlockedBadges)) unlockedBadges = c.unlockedBadges;
+        if (c.lastLevel) lastLevel = c.lastLevel;
+        if (c.hadBrokenStreak !== undefined) hadBrokenStreak = c.hadBrokenStreak;
+        if (c.lastReportWeek) lastReportWeek = c.lastReportWeek;
+
+        localStorage.setItem('ddt_habits', JSON.stringify(habits));
+        localStorage.setItem('ddt_data', JSON.stringify(cellData));
+        localStorage.setItem('ddt_notes_cells', JSON.stringify(cellNotes));
+        localStorage.setItem('ddt_tasks', JSON.stringify(taskData));
+        localStorage.setItem('ddt_notes', JSON.stringify(noteData));
+        localStorage.setItem('ddt_badges', JSON.stringify(unlockedBadges));
+        localStorage.setItem('ddt_lastlevel', JSON.stringify(lastLevel));
+        localStorage.setItem('ddt_hadbroken', JSON.stringify(hadBrokenStreak));
+        localStorage.setItem('ddt_lastreport', JSON.stringify(lastReportWeek));
+        localStorage.setItem('ddt_cloud_updated_at', c.updatedAt || '');
+        lastCloudUpdatedAt = c.updatedAt || '';
+
+        isApplyingCloudSync = false;
+        renderAll();
+        checkProgression();
+        updateCloudStatusUI('synced');
+        if (!isInitial && typeof showToast === 'function') {
+          showToast('☁️ Live sync: Updated from other device!');
+        }
+      } else if (hasLocalData && !c.updatedAt) {
+        pushToCloud();
+      } else {
+        updateCloudStatusUI('synced');
+      }
+    } else {
+      const hasLocalData = Object.keys(cellData).length > 0;
+      if (hasLocalData) pushToCloud();
+      else updateCloudStatusUI('synced');
+    }
+  } catch (err) {
+    console.warn('Cloud sync pull:', err);
+    updateCloudStatusUI('offline');
+  }
+}
+
+function updateCloudStatusUI(status) {
+  const badge = document.getElementById('cloud-sync-badge');
+  if (!badge) return;
+  if (status === 'syncing') {
+    badge.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin" style="color:var(--amber)"></i> <span class="hide-mobile" style="font-size:11px;color:var(--text3);margin-left:4px">Syncing...</span>';
+  } else if (status === 'synced') {
+    badge.innerHTML = '<i class="fa-solid fa-cloud" style="color:#22c55e"></i> <span class="hide-mobile" style="font-size:11px;color:#22c55e;margin-left:4px">Cloud Synced</span>';
+  } else if (status === 'offline') {
+    badge.innerHTML = '<i class="fa-solid fa-cloud" style="color:var(--text3)"></i> <span class="hide-mobile" style="font-size:11px;color:var(--text3);margin-left:4px">Offline</span>';
+  } else if (status === 'error') {
+    badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> <span class="hide-mobile" style="font-size:11px;color:var(--text3);margin-left:4px">Sync error</span>';
+  }
 }
 
 // ── DATE HELPERS ──────────────────────────────────────
@@ -1760,3 +1883,19 @@ setQuote();
 renderAll();
 checkProgression();
 fakeCompetitors = generateFakeCompetitors();
+
+// ── CLOUD SYNC INITIALIZATION ─────────────────────────
+if (typeof window !== 'undefined') {
+  window.pullFromCloud = pullFromCloud;
+  window.pushToCloud = pushToCloud;
+  
+  // Auto-sync when tab becomes visible (e.g. switching from mobile to laptop)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      pullFromCloud(false);
+    }
+  });
+
+  // Pull latest cloud data on initial load
+  setTimeout(() => pullFromCloud(true), 300);
+}

@@ -84,6 +84,9 @@
         <h1 class="page-title" id="page-title">Weekly Tracker</h1>
       </div>
       <div class="top-right" style="display:flex;align-items:center;gap:12px">
+        <div id="cloud-sync-badge" onclick="pullFromCloud(false)" style="display:inline-flex;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.06);border-radius:20px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;user-select:none" title="Click to sync with cloud">
+          <i class="fa-solid fa-cloud" style="color:#22c55e"></i> <span class="hide-mobile" style="font-size:11px;color:#22c55e;margin-left:5px;font-weight:600">Cloud Synced</span>
+        </div>
         <div class="week-controls" id="week-controls">
           <button class="week-btn" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
           <span class="week-range" id="week-range">This Week</span>
@@ -292,6 +295,12 @@
             <input type="file" id="import-csv" accept=".csv" style="display:none" onchange="importCSV(event)">
             <button class="s-btn primary" onclick="showWeeklyReport()">
               <i class="fa-solid fa-file-lines"></i> Generate Weekly Report
+            </button>
+            <button class="s-btn primary" onclick="pullFromCloud(false)" style="border:1px solid var(--accent);background:rgba(99,102,241,0.15)">
+              <i class="fa-solid fa-cloud-arrow-down" style="color:var(--accent2)"></i> Sync from Cloud Now (Mobile/PC)
+            </button>
+            <button class="s-btn primary" onclick="pushToCloud()" style="border:1px solid #10b981;background:rgba(16,185,129,0.15)">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:#10b981"></i> Force Upload to Cloud
             </button>
             <button class="s-btn danger" onclick="resetWeek()">
               <i class="fa-solid fa-rotate-left"></i> Reset This Week

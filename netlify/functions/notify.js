@@ -220,7 +220,45 @@ exports.handler = async function(event, context) {
     };
   }
 
-  // 5. PERIODIC CHECK (Called by Cron-job.org every 10-15 minutes)
+  // 5. PULL FULL TRACKER DATA (Cross-Device Cloud Sync)
+  if (action === 'pull_data') {
+    const cloudData = await getKV('tracker_user_data', null);
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        ok: true,
+        data: cloudData
+      })
+    };
+  }
+
+  // 6. PUSH FULL TRACKER DATA (Cross-Device Cloud Sync)
+  if (action === 'push_data') {
+    if (params.data && typeof params.data === 'object') {
+      const payload = {
+        ...params.data,
+        updatedAt: now.toISOString()
+      };
+      await setKV('tracker_user_data', payload);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          ok: true,
+          message: 'Cross-device data synced to cloud!',
+          updatedAt: payload.updatedAt
+        })
+      };
+    }
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ ok: false, error: 'No data payload provided' })
+    };
+  }
+
+  // 7. PERIODIC CHECK (Called by Cron-job.org every 10-15 minutes)
   let state = await getKV('state', { date: today, unfilledCount: 7, isAllFilled: false });
   let actionTaken = 'none';
   let messageSent = null;
