@@ -92,6 +92,41 @@ body {
   color: var(--text);
 }
 
+.sidebar-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+.sidebar-close-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 95;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 16px 12px;
@@ -1239,6 +1274,7 @@ body {
   :root { --sidebar-w: 0px; }
   .sidebar { transform: translateX(-220px); width: 220px; }
   .sidebar.open { transform: translateX(0); }
+  .sidebar-close-btn { display: flex; align-items: center; justify-content: center; }
   .main-content { margin-left: 0; }
   .hamburger { display: flex; }
   .score-strip { grid-template-columns: repeat(2,1fr); }

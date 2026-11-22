@@ -7,7 +7,7 @@ const https = require('https');
 
 const KV_BUCKET = process.env.KV_BUCKET || 'LJofqkL8XmtecR6kh3uqmA';
 
-function httpRequest(options, postData = null) {
+function httpRequest(options, postData = null, timeoutMs = 6000) {
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
       let data = '';
@@ -15,6 +15,10 @@ function httpRequest(options, postData = null) {
       res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
     });
     req.on('error', (err) => reject(err));
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      reject(new Error(`Request timed out after ${timeoutMs}ms`));
+    });
     if (postData) req.write(postData);
     req.end();
   });
@@ -118,8 +122,9 @@ async function sendOneSignal(appId, restKey, title, message, url) {
 exports.handler = async function(event, context) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
     'Content-Type': 'application/json'
   };
 

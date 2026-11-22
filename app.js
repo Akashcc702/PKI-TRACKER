@@ -855,7 +855,7 @@ function renderHabitTable(dates) {
           <button class="cell-btn ${cls} ${hasNote} ${readonlyClass}"
             onclick="${onclickHandler}"
             oncontextmenu="${oncontextHandler}"
-            title="${h.name} · ${fmtShort(d)} · ${s}${cellNotes[key] ? '\n📝 ' + cellNotes[key] : ''}${!today ? '\n🔒 Read-only (past day)' : ''}"
+            title="${h.name} · ${fmtShort(d)} · ${s}${cellNotes[key] ? '\n📝 ' + cellNotes[key] : ''}${!today ? '\n🔒 Locked (Only TODAY editable)' : ''}"
             aria-label="${h.name} ${fmtShort(d)}: ${s}">${icon}</button>
         </td>`;
       }).join('')}
@@ -921,7 +921,7 @@ function renderNotesGrid(dates) {
 
     return `<div class="note-wrap">
       <div class="note-day-lbl">${DAY_NAMES[d.getDay()]} ${!today ? '🔒' : ''}</div>
-      <textarea class="note-textarea" rows="4" placeholder="${today ? 'Daily notes...' : 'Read-only (past day)'}"
+      <textarea class="note-textarea" rows="4" placeholder="${today ? 'Daily notes...' : 'Locked (Only TODAY editable)'}"
         oninput="${today ? `updateNote('${dk}',this.value)` : 'showToast(\'⚠️ Only TODAY editable!\')'}"
         ${!today ? 'readonly' : ''}>${noteData[dk] || ''}</textarea>
     </div>`;
@@ -1487,8 +1487,8 @@ function openShareModal() {
       <div class="share-stat-lbl">${current.name}</div>
     </div>
     <div class="share-stat">
-      <div class="share-stat-val" style="color:#6e56ff">${greenCount}</div>
-      <div class="share-stat-lbl">Green Cells ✓</div>
+      <div class="share-stat-val" style="color:#6e56ff">${ws.tg}</div>
+      <div class="share-stat-lbl">Week Done ✓</div>
     </div>
   `;
 
@@ -1845,11 +1845,22 @@ function switchTab(tab, el) {
 
   if (tab === 'stats') { ['line','doughnut','bar'].forEach(destroyChart); }
 
+  // Auto-close sidebar on mobile viewports
+  if (window.innerWidth <= 900) {
+    const sb = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+  }
+
   renderAll();
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('active');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -1864,6 +1875,10 @@ document.addEventListener('keydown', e => {
     closeAchPopup();
     closeLevelUpPopup();
     closeNotePopup();
+    const sb = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
   }
 
   if (activeTab === 'tracker' || activeTab === 'tasks') {

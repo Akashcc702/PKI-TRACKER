@@ -17,19 +17,23 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "8b464609-3bac-45ac-ab5d-f0f98ea93f32",
-        serviceWorkerParam: { scope: "/" },
-        serviceWorkerPath: "OneSignalSDKWorker.js",
-        notifyButton: {
-          enable: true
-        },
-        allowLocalhostAsSecureOrigin: true
-      });
       try {
-        OneSignal.Slidedown.promptPush();
+        await OneSignal.init({
+          appId: "8b464609-3bac-45ac-ab5d-f0f98ea93f32",
+          serviceWorkerParam: { scope: "/" },
+          serviceWorkerPath: "OneSignalSDKWorker.js",
+          notifyButton: {
+            enable: true
+          },
+          allowLocalhostAsSecureOrigin: true
+        });
+        try {
+          OneSignal.Slidedown.promptPush();
+        } catch (err) {
+          console.warn("OneSignal prompt notice:", err);
+        }
       } catch (err) {
-        console.warn("OneSignal prompt notice:", err);
+        console.warn("OneSignal initialization notice (restricted origin):", err.message || err);
       }
     });
   </script>
@@ -40,8 +44,11 @@
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <span class="logo-icon">🔥</span>
-      <span class="logo-text">DISCIPLINE</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="logo-icon">🔥</span>
+        <span class="logo-text">DISCIPLINE</span>
+      </div>
+      <button class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close Sidebar"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-item active" onclick="switchTab('tracker', this)">
@@ -77,6 +84,8 @@
     </div>
   </aside>
 
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
   <main class="main-content">
     <header class="top-bar">
       <div class="top-left">
@@ -85,7 +94,7 @@
       </div>
       <div class="top-right" style="display:flex;align-items:center;gap:12px">
         <div id="cloud-sync-badge" onclick="pullFromCloud(false)" style="display:inline-flex;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.06);border-radius:20px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;user-select:none" title="Click to sync with cloud">
-          <i class="fa-solid fa-cloud" style="color:#22c55e"></i> <span class="hide-mobile" style="font-size:11px;color:#22c55e;margin-left:5px;font-weight:600">Cloud Synced</span>
+          <i class="fa-solid fa-cloud" style="color:var(--text3)"></i> <span class="hide-mobile" style="font-size:11px;color:var(--text3);margin-left:5px;font-weight:600">Connecting...</span>
         </div>
         <div class="week-controls" id="week-controls">
           <button class="week-btn" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>

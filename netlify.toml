@@ -8,6 +8,14 @@
   status = 200
 
 [[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
   for = "/OneSignalSDKWorker.js"
   [headers.values]
     Service-Worker-Allowed = "/"

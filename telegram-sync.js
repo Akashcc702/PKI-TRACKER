@@ -253,7 +253,22 @@ window.saveTelegramSettings = function() {
 window.testTelegramAlert = async function() {
   if (typeof showToast === 'function') showToast('🚀 Dispatching Test Alert...');
   try {
-    const res = await fetch('/api/notify?action=test');
+    const token = (document.getElementById('tg-bot-token')?.value || '').trim();
+    const chatId = (document.getElementById('tg-chat-id')?.value || '').trim();
+    const webUrl = (document.getElementById('tg-web-url')?.value || window.location.href.split('#')[0]).trim();
+
+    if (token && chatId) {
+      TelegramSync.saveConfig(token, chatId, true, webUrl);
+    }
+
+    const query = new URLSearchParams({
+      action: 'test',
+      token: token,
+      chat_id: chatId,
+      web_url: webUrl
+    });
+
+    const res = await fetch(`/api/notify?${query.toString()}`);
     const data = await res.json();
     if (data.ok && data.telegram && data.telegram.ok) {
       if (typeof showToast === 'function') {
@@ -262,8 +277,17 @@ window.testTelegramAlert = async function() {
         alert('✅ Cloud Telegram Test Alert Sent! Check your Telegram.');
       }
       return;
+    } else if (data.telegram && data.telegram.description) {
+      if (typeof showToast === 'function') {
+        showToast(`⚠️ Telegram error: ${data.telegram.description}`);
+      } else {
+        alert(`⚠️ Telegram error: ${data.telegram.description}`);
+      }
+      return;
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('Cloud test fallback:', e);
+  }
   TelegramSync.testNotification();
 };
 
