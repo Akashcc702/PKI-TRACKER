@@ -26,6 +26,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
+          cache-disabled: true
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -42,7 +43,11 @@ jobs:
       - name: Build Android APK
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build.log || {
+            ERR=$(grep -E -A 5 -B 2 "FAILURE:|error:|FAILED" build.log | head -n 30 | tr '\n' ' ')
+            echo "::error::$ERR"
+            exit 1
+          }
 
       - name: Prepare APK Output
         run: |
