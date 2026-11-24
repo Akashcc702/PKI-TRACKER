@@ -42,17 +42,18 @@ jobs:
 
       - name: Build Android APK
         run: |
+          set -o pipefail
           cd android
-          ./gradlew assembleDebug --stacktrace 2>&1 | tee build.log || {
-            ERR=$(grep -E -A 5 -B 2 "FAILURE:|error:|FAILED" build.log | head -n 30 | tr '\n' ' ')
-            echo "::error::$ERR"
-            exit 1
-          }
+          ./gradlew assembleDebug --stacktrace
 
       - name: Prepare APK Output
         run: |
           mkdir -p output_apk
           find . -name "*.apk" -exec cp {} output_apk/DailyDiscipline.apk \;
+          if [ ! -f output_apk/DailyDiscipline.apk ]; then
+            echo "::error::DailyDiscipline.apk was not found after assembleDebug!"
+            exit 1
+          fi
           ls -la output_apk/
 
       - name: Upload APK Artifact
