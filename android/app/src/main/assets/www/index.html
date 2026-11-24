@@ -30,6 +30,9 @@
       <button class="nav-item" onclick="switchTab('tasks', this)">
         <i class="fa-solid fa-list-check"></i> Daily Tasks
       </button>
+      <button class="nav-item" onclick="switchTab('timetable', this)">
+        <i class="fa-solid fa-clock"></i> Time Table
+      </button>
       <button class="nav-item" onclick="switchTab('calendar', this)">
         <i class="fa-solid fa-calendar-days"></i> Calendar
       </button>
@@ -126,6 +129,36 @@
         <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">Daily Journal Notes</h3>
         <p class="section-sub" style="margin-bottom:12px">Reflect on your day</p>
         <div class="notes-grid" id="notes-grid"></div>
+      </div>
+    </div>
+
+    <div id="tab-timetable" class="tab-content">
+      <div class="timetable-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div>
+            <h2 class="section-heading">📅 Daily Routine Time Table</h2>
+            <p class="section-sub">Drag habits to slots or type <code>@1</code>, <code>@2</code> with custom slot notifications.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="s-btn primary" onclick="addTimeSlot()"><i class="fa-solid fa-plus"></i> Add Slot</button>
+            <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="saveAndSyncTimeTable(true)"><i class="fa-solid fa-bell"></i> Save Reminders</button>
+          </div>
+        </div>
+
+        <!-- Draggable Habits Tray -->
+        <div class="habits-tray-box">
+          <div class="habits-tray-label">
+            <i class="fa-solid fa-hand-pointer"></i> Drag any Habit to a slot, or type <b>@1</b>, <b>@2</b> in activity:
+          </div>
+          <div class="habits-drag-tray" id="habits-drag-tray">
+            <!-- Dynamic habit draggable chips -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Table Slots List -->
+      <div class="timetable-slots-list" id="timetable-slots-list">
+        <!-- Rendered by JS -->
       </div>
     </div>
 
@@ -335,6 +368,32 @@
             </div>
           </div>
 
+          <!-- Custom Alarm & Notification Tone / Voice -->
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+              <span>🔊</span> Custom Alarm &amp; Notification Tone / Voice
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <select id="alarm-sound-select" class="s-input" style="flex:1;min-width:180px;padding:6px 10px;font-size:12px" onchange="saveAlarmSettings()">
+                <option value="system_alarm">🚨 Loud System Alarm (Default)</option>
+                <option value="voice_alert">📣 Motivation Voice Alert (TTS Speaking)</option>
+                <option value="digital_beep">⚡ Digital Rapid Radar Beeps</option>
+                <option value="siren">🛡️ Tactical Emergency Siren</option>
+                <option value="zen_bell">🧘 Zen Bell &amp; Chime</option>
+              </select>
+              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent);padding:6px 10px" onclick="previewSelectedTone()">
+                <i class="fa-solid fa-volume-high"></i> Preview Tone
+              </button>
+            </div>
+          </div>
+
+          <!-- Smart Alarm Intelligence Note -->
+          <div style="background:rgba(110,86,255,0.05);border:1px dashed rgba(110,86,255,0.3);border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:var(--text2);line-height:1.5">
+            <b>🎯 Smart Alarm Logic:</b><br>
+            • <b>09:00 AM</b>: Rings only if app was <i>not opened</i> before 9 AM today. Tapping stops sound and opens app.<br>
+            • <b>09:00 PM</b>: Rings only if today's habits are <i>unfilled</i>. If you exit without filling, it will re-alarm in <b>5 minutes</b>!
+          </div>
+
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="s-btn primary" onclick="triggerAndroidAlarmTest()">
               <i class="fa-solid fa-bell"></i> ⏰ Test Ring Alarm Now
@@ -436,6 +495,10 @@
     <button class="bnav-btn" id="bnav-tasks" onclick="switchTab('tasks', this)">
       <i class="fa-solid fa-list-check"></i>
       <span>Tasks</span>
+    </button>
+    <button class="bnav-btn" id="bnav-timetable" onclick="switchTab('timetable', this)">
+      <i class="fa-solid fa-clock"></i>
+      <span>Schedule</span>
     </button>
     <button class="bnav-btn" id="bnav-calendar" onclick="switchTab('calendar', this)">
       <i class="fa-solid fa-calendar-days"></i>

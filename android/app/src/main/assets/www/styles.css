@@ -1464,6 +1464,191 @@ body {
   .popup-content { width: 90%; margin: auto; padding: 24px 16px; }
 }
 
+/* ===== TIME TABLE STYLES ===== */
+.habits-tray-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.habits-tray-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.habits-tray-label b { color: var(--accent2); }
+.habits-drag-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.habit-drag-chip {
+  background: rgba(110,86,255,0.12);
+  border: 1px solid rgba(110,86,255,0.3);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.habit-drag-chip:active { cursor: grabbing; transform: scale(0.96); }
+.habit-drag-chip:hover {
+  background: rgba(110,86,255,0.25);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.habit-drag-num {
+  font-family: var(--font-mono);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 9.5px;
+}
+
+.timetable-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.timetable-slot-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+  position: relative;
+}
+.timetable-slot-card.drag-over {
+  border: 2px dashed var(--accent) !important;
+  background: rgba(110,86,255,0.12) !important;
+  transform: scale(1.01);
+}
+.slot-time-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.slot-time-input {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+}
+.slot-time-input:focus { border-color: var(--accent); }
+.slot-content-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+}
+.slot-title-input {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  outline: none;
+}
+.slot-title-input:focus { border-color: var(--accent); }
+.slot-tag-badge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.slot-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.slot-lead-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  outline: none;
+}
+.slot-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 6px;
+  font-size: 13px;
+  transition: color 0.15s;
+}
+.slot-delete-btn:hover { color: var(--red); }
+
+/* @ autocomplete popup */
+.at-suggest-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg3);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  z-index: 200;
+  max-height: 160px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  display: none;
+}
+.at-suggest-popup.show { display: block; }
+.at-suggest-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.at-suggest-item:hover { background: rgba(110,86,255,0.2); }
+.at-suggest-item:last-child { border-bottom: none; }
+
+@media (max-width: 650px) {
+  .timetable-slot-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  .slot-actions-group {
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 420px) {
   .page-title { display: none; }
   .week-range { min-width: 82px; font-size: 9px; }

@@ -23,6 +23,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
@@ -48,7 +50,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Initialize 9 AM and 9 PM alarms (or user-saved preferences)
+        // Initialize alarms & record app opened
+        AlarmHelper.recordAppOpened(this);
         AlarmHelper.scheduleDailyAlarms(this);
 
         // Initialize WebView
@@ -92,14 +95,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // Rule: Opening app stops any active ringing alarm immediately!
+        AlarmSoundService.stopAlarm(this);
+        AlarmHelper.recordAppOpened(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        checkAndScheduleNightExitSnooze();
+    }
+
+    private void checkAndScheduleNightExitSnooze() {
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Kolkata"));
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+
+        // If user exits after 9:00 PM and habits are not complete, schedule 5-minute snooze alarm!
+        if (hour >= 21) {
+            if (AlarmHelper.shouldTriggerNightAlarm(this)) {
+                AlarmHelper.scheduleSnoozeAlarm(this, 5 * 60 * 1000L); // 5 minutes
+            }
+        }
+    }
+
+    @Override
     public void onBackPressed() {
-        // Query WebView to close any open modal or sidebar first
         if (webView != null) {
             webView.evaluateJavascript(
                 "(function() {" +
                 "  const sb = document.getElementById('sidebar');" +
                 "  if (sb && sb.classList.contains('open')) { toggleSidebar(); return 'closed_sidebar'; }" +
-                "  const modals = ['report-modal', 'share-modal', 'note-modal', 'calendar-modal'];" +
+                "  const modals = ['report-modal', 'share-modal', 'note-modal', 'calendar-modal', 'slot-modal'];" +
                 "  for (const m of modals) {" +
                 "    const el = document.getElementById(m);" +
                 "    if (el && (el.classList.contains('show') || el.classList.contains('active'))) {" +
@@ -153,21 +181,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
-        public void testRingAlarm() {
-            AlarmHelper.triggerTestAlarm(context);
-            toast("⏰ Ring Alarm triggered! Ringing in 1.5 seconds...");
+        public void recordAppOpened() {
+            AlarmHelper.recordAppOpened(context);
         }
 
         @JavascriptInterface
-        public void scheduleAlarms() {
-            AlarmHelper.scheduleDailyAlarms(context);
-            toast("✅ Daily alarms re-synchronized!");
+        public void stopActiveAlarm() {
+            AlarmSoundService.stopAlarm(context);
         }
 
         @JavascriptInterface
-        public void configureAlarms(int morningHour, int morningMin, boolean morningEnabled, int nightHour, int nightMin, boolean nightEnabled) {
-            AlarmHelper.saveAndScheduleAlarms(context, morningHour, morningMin, morningEnabled, nightHour, nightMin, nightEnabled);
-            toast("✅ Custom alarm schedules saved successfully!");
+        public void updateHabitsCompletionStatus(boolean allCompleted, int unfilledCount) {
+            AlarmHelper.updateHabitsCompletionStatus(context, allCompleted, unfilledCount);
+        }
+
+        @JavascriptInterface
+        public void testRingAlarm(String soundType) {
+            AlarmHelper.triggerTestAlarm(context, soundType);
+            toast("⏰ Test Alarm triggered! Ringing in 1 second...");
+        }
+
+        @JavascriptInterface
+        public void configureAlarms(int morningHour, int morningMin, boolean morningEnabled, int nightHour, int nightMin, boolean nightEnabled, String soundType) {
+            AlarmHelper.saveAndScheduleAlarms(context, morningHour, morningMin, morningEnabled, nightHour, nightMin, nightEnabled, soundType);
+            toast("✅ Alarm schedule & sound type saved!");
+        }
+
+        @JavascriptInterface
+        public void scheduleTimeTableReminders(String slotsJson) {
+            AlarmHelper.scheduleTimeTableReminders(context, slotsJson);
+            toast("📅 Time Table reminders scheduled!");
         }
     }
 }

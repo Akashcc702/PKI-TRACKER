@@ -798,11 +798,13 @@ function renderAll() {
 
   if (activeTab === 'tracker')      renderTracker(dates);
   if (activeTab === 'tasks')        renderTasks(dates);
+  if (activeTab === 'timetable')    renderTimeTable();
   if (activeTab === 'calendar')     renderCalendar();
   if (activeTab === 'stats')        renderStats(dates);
   if (activeTab === 'achievements') renderAchievements();
   if (activeTab === 'leaderboard')  renderLeaderboard();
   if (activeTab === 'settings')     renderSettings();
+  checkAndNotifyHabitsCompletion();
 }
 
 function updateWeekLabel(dates) {
@@ -1878,7 +1880,7 @@ function switchTab(tab, el) {
   if (sidebarNavBtn) sidebarNavBtn.classList.add('active');
 
   const titles = {
-    tracker: 'Weekly Tracker', tasks: 'Daily Tasks', calendar: 'Calendar View',
+    tracker: 'Weekly Tracker', tasks: 'Daily Tasks', timetable: 'Daily Routine Time Table', calendar: 'Calendar View',
     stats: 'Analytics', achievements: 'Achievements', leaderboard: 'Leaderboard', settings: 'Settings'
   };
   const titleEl = document.getElementById('page-title');
@@ -1911,22 +1913,262 @@ function toggleSidebar() {
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
+// ── HABIT COMPLETION CHECKER FOR SMART ALARMS ────────
+function checkAndNotifyHabitsCompletion() {
+  const today = new Date();
+  let allFilled = true;
+  let unfilledCount = 0;
+  habits.forEach(h => {
+    const st = getStatus(h.id, today);
+    if (st === 'none') {
+      allFilled = false;
+      unfilledCount++;
+    }
+  });
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.updateHabitsCompletionStatus === 'function') {
+    window.AndroidBridge.updateHabitsCompletionStatus(allFilled, unfilledCount);
+  }
+}
+
+// ── TIME TABLE ENGINE (DRAG & DROP, @ SHORTCUTS, REMINDERS) ───────────
+const DEFAULT_TIMETABLE_SLOTS = [
+  { id: 'slot_1', startTime: '06:00', endTime: '07:00', title: 'Morning Workout & Physical Training', habitId: 'h1', habitTag: 'Habit #1', leadMinutes: 5, reminder: true },
+  { id: 'slot_2', startTime: '07:30', endTime: '08:30', title: 'Deep Reading & Learning', habitId: 'h2', habitTag: 'Habit #2', leadMinutes: 5, reminder: true },
+  { id: 'slot_3', startTime: '09:00', endTime: '12:00', title: 'Core Focus & Deep Coding Session', habitId: 'h3', habitTag: 'Habit #3', leadMinutes: 10, reminder: true },
+  { id: 'slot_4', startTime: '14:00', endTime: '17:00', title: 'Project Execution & Review', habitId: '', habitTag: '', leadMinutes: 5, reminder: true },
+  { id: 'slot_5', startTime: '20:00', endTime: '21:00', title: 'Night Review & Habit Filling', habitId: '', habitTag: '', leadMinutes: 5, reminder: true }
+];
+
+let timeTableSlots = load('ddt_timetable_slots', DEFAULT_TIMETABLE_SLOTS);
+let draggedHabit = null;
+
+function renderTimeTable() {
+  const tray = document.getElementById('habits-drag-tray');
+  const list = document.getElementById('timetable-slots-list');
+  if (!tray || !list) return;
+
+  // 1. Render Habits Drag Tray
+  tray.innerHTML = habits.map((h, i) => `
+    <div class="habit-drag-chip" draggable="true" 
+         ondragstart="onHabitDragStart(event, '${h.id}', '${encodeURIComponent(h.name)}', ${i + 1}, ${h.pts})">
+      <span class="habit-drag-num">@${i + 1}</span>
+      <span>${escapeHtml(h.name)}</span>
+      <span style="font-size:9.5px;color:var(--accent2);opacity:0.85">[${h.pts}p]</span>
+    </div>
+  `).join('');
+
+  // 2. Render Time Table Slots
+  list.innerHTML = timeTableSlots.map((slot, index) => `
+    <div class="timetable-slot-card" id="card-${slot.id}"
+         ondragover="onSlotDragOver(event, '${slot.id}')"
+         ondragleave="onSlotDragLeave(event, '${slot.id}')"
+         ondrop="onSlotDrop(event, '${slot.id}')">
+      
+      <div class="slot-time-group">
+        <input type="time" class="slot-time-input" value="${slot.startTime}" 
+               onchange="updateSlotField('${slot.id}', 'startTime', this.value)">
+        <span style="color:var(--text3)">to</span>
+        <input type="time" class="slot-time-input" value="${slot.endTime}" 
+               onchange="updateSlotField('${slot.id}', 'endTime', this.value)">
+      </div>
+
+      <div class="slot-content-group">
+        <input type="text" class="slot-title-input" id="input-${slot.id}"
+               value="${escapeHtml(slot.title)}" placeholder="Type activity or @1, @2 for habits..."
+               oninput="onSlotTitleInput(event, '${slot.id}')"
+               onblur="onSlotInputBlur('${slot.id}')"
+               autocomplete="off">
+        
+        <div class="at-suggest-popup" id="suggest-${slot.id}">
+          ${habits.map((h, i) => `
+            <div class="at-suggest-item" onmousedown="insertHabitIntoSlot('${slot.id}', '${escapeHtml(h.name)}', '${h.id}', ${i + 1}, ${h.pts})">
+              <span><b>@${i + 1}</b> ${escapeHtml(h.name)}</span>
+              <span style="color:var(--accent2)">${h.pts} pts</span>
+            </div>
+          `).join('')}
+        </div>
+
+        ${slot.habitTag ? `<div class="slot-tag-badge"><i class="fa-solid fa-link"></i> Linked: <b>${escapeHtml(slot.habitTag)}</b></div>` : ''}
+      </div>
+
+      <div class="slot-actions-group">
+        <select class="slot-lead-select" onchange="updateSlotField('${slot.id}', 'leadMinutes', Number(this.value))">
+          <option value="0" ${slot.leadMinutes === 0 ? 'selected' : ''}>At start time</option>
+          <option value="5" ${slot.leadMinutes === 5 ? 'selected' : ''}>5m before</option>
+          <option value="10" ${slot.leadMinutes === 10 ? 'selected' : ''}>10m before</option>
+          <option value="15" ${slot.leadMinutes === 15 ? 'selected' : ''}>15m before</option>
+        </select>
+
+        <label class="switch-toggle" title="Toggle slot reminder">
+          <input type="checkbox" ${slot.reminder ? 'checked' : ''} onchange="updateSlotField('${slot.id}', 'reminder', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+
+        <button class="slot-delete-btn" onclick="deleteTimeSlot('${slot.id}')" title="Delete slot">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function onHabitDragStart(e, id, encName, num, pts) {
+  draggedHabit = { id, name: decodeURIComponent(encName), num, pts };
+  try {
+    e.dataTransfer.setData('text/plain', JSON.stringify(draggedHabit));
+  } catch {}
+}
+
+function onSlotDragOver(e, slotId) {
+  e.preventDefault();
+  const card = document.getElementById(`card-${slotId}`);
+  if (card) card.classList.add('drag-over');
+}
+
+function onSlotDragLeave(e, slotId) {
+  const card = document.getElementById(`card-${slotId}`);
+  if (card) card.classList.remove('drag-over');
+}
+
+function onSlotDrop(e, slotId) {
+  e.preventDefault();
+  const card = document.getElementById(`card-${slotId}`);
+  if (card) card.classList.remove('drag-over');
+
+  let data = draggedHabit;
+  if (!data) {
+    try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch {}
+  }
+  if (!data) return;
+
+  const slot = timeTableSlots.find(s => s.id === slotId);
+  if (slot) {
+    slot.title = `${data.name}`;
+    slot.habitId = data.id;
+    slot.habitTag = `Habit #${data.num} [${data.pts} pts]`;
+    saveTimeTable();
+    renderTimeTable();
+    showToast(`🎯 Habit "${data.name}" linked to slot!`);
+  }
+}
+
+function onSlotTitleInput(e, slotId) {
+  const input = e.target;
+  const val = input.value;
+  const popup = document.getElementById(`suggest-${slotId}`);
+
+  // Auto-expand @1, @2, @3...
+  const match = val.match(/@(\d+)/);
+  if (match) {
+    const habitIndex = parseInt(match[1], 10) - 1;
+    if (habitIndex >= 0 && habitIndex < habits.length) {
+      const h = habits[habitIndex];
+      const replaced = val.replace(/@\d+/, `${h.name}`);
+      input.value = replaced;
+      insertHabitIntoSlot(slotId, replaced, h.id, habitIndex + 1, h.pts);
+      if (popup) popup.classList.remove('show');
+      return;
+    }
+  }
+
+  // Show suggestion popup if includes @
+  if (popup) {
+    if (val.includes('@')) {
+      popup.classList.add('show');
+    } else {
+      popup.classList.remove('show');
+    }
+  }
+
+  updateSlotField(slotId, 'title', input.value, false);
+}
+
+function onSlotInputBlur(slotId) {
+  setTimeout(() => {
+    const popup = document.getElementById(`suggest-${slotId}`);
+    if (popup) popup.classList.remove('show');
+  }, 200);
+}
+
+function insertHabitIntoSlot(slotId, title, habitId, num, pts) {
+  const slot = timeTableSlots.find(s => s.id === slotId);
+  if (slot) {
+    slot.title = title;
+    slot.habitId = habitId;
+    slot.habitTag = `Habit #${num} [${pts} pts]`;
+    saveTimeTable();
+    renderTimeTable();
+    showToast(`✅ "${title}" linked to schedule!`);
+  }
+}
+
+function addTimeSlot() {
+  const newId = 'slot_' + Date.now();
+  timeTableSlots.push({
+    id: newId,
+    startTime: '10:00',
+    endTime: '11:00',
+    title: 'Focus Routine',
+    habitId: '',
+    habitTag: '',
+    leadMinutes: 5,
+    reminder: true
+  });
+  saveTimeTable();
+  renderTimeTable();
+  showToast('➕ New Time Slot added!');
+}
+
+function deleteTimeSlot(slotId) {
+  timeTableSlots = timeTableSlots.filter(s => s.id !== slotId);
+  saveTimeTable();
+  renderTimeTable();
+  showToast('🗑️ Slot removed');
+}
+
+function updateSlotField(slotId, field, val, shouldReRender = true) {
+  const slot = timeTableSlots.find(s => s.id === slotId);
+  if (slot) {
+    slot[field] = val;
+    saveTimeTable();
+    if (shouldReRender) renderTimeTable();
+  }
+}
+
+function saveTimeTable() {
+  save('ddt_timetable_slots', timeTableSlots);
+}
+
+function saveAndSyncTimeTable(showFeedback = false) {
+  saveTimeTable();
+  if (window.AndroidBridge && typeof window.AndroidBridge.scheduleTimeTableReminders === 'function') {
+    window.AndroidBridge.scheduleTimeTableReminders(JSON.stringify(timeTableSlots));
+  }
+  if (showFeedback && typeof showToast === 'function') {
+    showToast('📅 Time Table reminders scheduled successfully!');
+  }
+}
+
 // ── NATIVE ALARM & NOTIFICATION MANAGER ──────────────
 function loadAlarmSettings() {
   const mTime = localStorage.getItem('ddt_morning_time') || '09:00';
   const mEnabled = localStorage.getItem('ddt_morning_enabled') !== 'false';
   const nTime = localStorage.getItem('ddt_night_time') || '21:00';
   const nEnabled = localStorage.getItem('ddt_night_enabled') !== 'false';
+  const sType = localStorage.getItem('ddt_sound_type') || 'system_alarm';
 
   const mInput = document.getElementById('morning-alarm-time');
   const mToggle = document.getElementById('morning-alarm-toggle');
   const nInput = document.getElementById('night-alarm-time');
   const nToggle = document.getElementById('night-alarm-toggle');
+  const sSelect = document.getElementById('alarm-sound-select');
 
   if (mInput) mInput.value = mTime;
   if (mToggle) mToggle.checked = mEnabled;
   if (nInput) nInput.value = nTime;
   if (nToggle) nToggle.checked = nEnabled;
+  if (sSelect) sSelect.value = sType;
 }
 
 function saveAlarmSettings(showFeedback = false) {
@@ -1934,57 +2176,133 @@ function saveAlarmSettings(showFeedback = false) {
   const mToggle = document.getElementById('morning-alarm-toggle');
   const nInput = document.getElementById('night-alarm-time');
   const nToggle = document.getElementById('night-alarm-toggle');
+  const sSelect = document.getElementById('alarm-sound-select');
 
   const mTime = mInput ? mInput.value : '09:00';
   const mEnabled = mToggle ? mToggle.checked : true;
   const nTime = nInput ? nInput.value : '21:00';
   const nEnabled = nToggle ? nToggle.checked : true;
+  const sType = sSelect ? sSelect.value : 'system_alarm';
 
   localStorage.setItem('ddt_morning_time', mTime);
   localStorage.setItem('ddt_morning_enabled', mEnabled);
   localStorage.setItem('ddt_night_time', nTime);
   localStorage.setItem('ddt_night_enabled', nEnabled);
+  localStorage.setItem('ddt_sound_type', sType);
 
   const [mHour, mMin] = mTime.split(':').map(Number);
   const [nHour, nMin] = nTime.split(':').map(Number);
 
   if (window.AndroidBridge && typeof window.AndroidBridge.configureAlarms === 'function') {
-    window.AndroidBridge.configureAlarms(mHour, mMin, mEnabled, nHour, nMin, nEnabled);
-  } else if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarms === 'function') {
-    window.AndroidBridge.scheduleAlarms();
+    window.AndroidBridge.configureAlarms(mHour, mMin, mEnabled, nHour, nMin, nEnabled, sType);
   }
 
   const banner = document.getElementById('alarm-status-banner');
   if (banner) {
-    banner.textContent = `✅ Alarms updated: Morning ${mTime} (${mEnabled ? 'ON' : 'OFF'}), Night ${nTime} (${nEnabled ? 'ON' : 'OFF'})`;
+    banner.textContent = `✅ Alarms updated: Morning ${mTime} (${mEnabled ? 'ON' : 'OFF'}), Night ${nTime} (${nEnabled ? 'ON' : 'OFF'}) · Tone: ${sType}`;
     banner.style.color = '#10b981';
   }
 
   if (showFeedback && typeof showToast === 'function') {
-    showToast('🔔 Alarms successfully updated and scheduled!');
+    showToast('🔔 Alarms & Sound Tone successfully saved and scheduled!');
   }
 }
 
-function triggerAndroidAlarmTest() {
-  if (window.AndroidBridge && typeof window.AndroidBridge.testRingAlarm === 'function') {
-    window.AndroidBridge.testRingAlarm();
-  } else {
-    // Web fallback test audio chime
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+function previewSelectedTone() {
+  const sSelect = document.getElementById('alarm-sound-select');
+  const type = sSelect ? sSelect.value : 'system_alarm';
+  previewTone(type);
+}
+
+function previewTone(type) {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    
+    if (type === 'voice_alert') {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance("Attention! Daily discipline reminder. Rise and grind!");
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+      } else {
+        showToast('📣 Voice alert previewed');
+      }
+      return;
+    }
+
+    if (type === 'digital_beep') {
+      for (let i = 0; i < 3; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1400, now + i * 0.15);
+        gain.gain.setValueAtTime(0.25, now + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.1);
+        osc.start(now + i * 0.15);
+        osc.stop(now + i * 0.15 + 0.1);
+      }
+      return;
+    }
+
+    if (type === 'siren') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.linearRampToValueAtTime(1200, now + 0.4);
+      osc.frequency.linearRampToValueAtTime(600, now + 0.8);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.9);
+      osc.start(now);
+      osc.stop(now + 0.9);
+      return;
+    }
+
+    if (type === 'zen_bell') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
-    } catch {}
-    if (typeof showToast === 'function') {
-      showToast('⏰ Test Alarm ringing (Web Audio / Chime)');
+      osc.frequency.setValueAtTime(528, now);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      osc.start(now);
+      osc.stop(now + 1.8);
+      return;
     }
+
+    // Default System Loud Alarm
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880, now);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+    osc.start(now);
+    osc.stop(now + 0.7);
+  } catch (err) {
+    console.warn('Tone preview error:', err);
+  }
+}
+
+function triggerAndroidAlarmTest() {
+  const sSelect = document.getElementById('alarm-sound-select');
+  const sType = sSelect ? sSelect.value : 'system_alarm';
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.testRingAlarm === 'function') {
+    window.AndroidBridge.testRingAlarm(sType);
+  } else {
+    previewTone(sType);
+    showToast(`⏰ Testing Alarm Tone (${sType})`);
   }
 }
 
@@ -2025,20 +2343,50 @@ setQuote();
 renderAll();
 checkProgression();
 loadAlarmSettings();
+renderTimeTable();
+checkAndNotifyHabitsCompletion();
 fakeCompetitors = generateFakeCompetitors();
 
-// ── CLOUD SYNC INITIALIZATION ─────────────────────────
+// Record app opened and stop any ringing alarm on startup
+if (typeof window !== 'undefined' && window.AndroidBridge) {
+  if (typeof window.AndroidBridge.recordAppOpened === 'function') {
+    window.AndroidBridge.recordAppOpened();
+  }
+  if (typeof window.AndroidBridge.stopActiveAlarm === 'function') {
+    window.AndroidBridge.stopActiveAlarm();
+  }
+}
+
+// ── GLOBAL WINDOW BINDINGS ────────────────────────────
 if (typeof window !== 'undefined') {
   window.pullFromCloud = pullFromCloud;
   window.pushToCloud = pushToCloud;
   window.saveAlarmSettings = saveAlarmSettings;
   window.triggerAndroidAlarmTest = triggerAndroidAlarmTest;
   window.rescheduleAndroidAlarms = rescheduleAndroidAlarms;
+  window.previewSelectedTone = previewSelectedTone;
+  window.previewTone = previewTone;
+
+  window.addTimeSlot = addTimeSlot;
+  window.deleteTimeSlot = deleteTimeSlot;
+  window.updateSlotField = updateSlotField;
+  window.saveAndSyncTimeTable = saveAndSyncTimeTable;
+  window.onHabitDragStart = onHabitDragStart;
+  window.onSlotDragOver = onSlotDragOver;
+  window.onSlotDragLeave = onSlotDragLeave;
+  window.onSlotDrop = onSlotDrop;
+  window.onSlotTitleInput = onSlotTitleInput;
+  window.onSlotInputBlur = onSlotInputBlur;
+  window.insertHabitIntoSlot = insertHabitIntoSlot;
   
   // Auto-sync when tab becomes visible (e.g. switching from mobile to laptop)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       pullFromCloud(false);
+      checkAndNotifyHabitsCompletion();
+      if (window.AndroidBridge && typeof window.AndroidBridge.stopActiveAlarm === 'function') {
+        window.AndroidBridge.stopActiveAlarm();
+      }
     }
   });
 
