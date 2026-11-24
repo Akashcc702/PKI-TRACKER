@@ -87,6 +87,7 @@ jobs:
             ```
           files: |
             output_apk/DailyDiscipline.apk
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

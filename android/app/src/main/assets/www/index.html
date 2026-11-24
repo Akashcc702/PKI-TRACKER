@@ -2,41 +2,14 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Daily Discipline Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Local Offline Assets (0ms instant startup) -->
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <script src="vendor/chart.min.js"></script>
+  <script src="vendor/html2canvas.min.js"></script>
+  <script src="vendor/confetti.browser.min.js"></script>
   <link rel="stylesheet" href="styles.css">
-  <!-- OneSignal Web Push SDK -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      try {
-        await OneSignal.init({
-          appId: "8b464609-3bac-45ac-ab5d-f0f98ea93f32",
-          serviceWorkerParam: { scope: "/" },
-          serviceWorkerPath: "OneSignalSDKWorker.js",
-          notifyButton: {
-            enable: true
-          },
-          allowLocalhostAsSecureOrigin: true
-        });
-        try {
-          OneSignal.Slidedown.promptPush();
-        } catch (err) {
-          console.warn("OneSignal prompt notice:", err);
-        }
-      } catch (err) {
-        console.warn("OneSignal initialization notice (restricted origin):", err.message || err);
-      }
-    });
-  </script>
 </head>
 <body>
   <div class="noise-overlay"></div>
@@ -320,87 +293,58 @@
           </div>
           <div class="data-info" id="data-info"></div>
         </div>
-        <div class="settings-card">
+        <div class="settings-card" id="notifications-settings-card">
           <div class="settings-card-title">
-            <i class="fa-solid fa-bell" style="color:var(--accent)"></i> Smart Notifications (OneSignal + Telegram)
+            <i class="fa-solid fa-bell" style="color:var(--accent)"></i> Direct In-App Alarms &amp; Notifications
           </div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">
-            Automated notifications active on both <b>Direct Browser Push</b> and <b>Telegram</b>:<br>
-            • <b>09:00 AM – 10:00 AM</b>: Open website reminder (every 10m until opened)<br>
-            • <b>09:00 PM onwards</b>: Unfilled activity reminder (every 10m until filled)
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+            100% Offline Native Alarms with loud sound &amp; vibration. Works even when the phone is locked or screen is off (0MB background RAM).
           </p>
 
-          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:14px">
-            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
-              <i class="fa-solid fa-globe" style="color:#e11d48"></i> 1. Direct Browser Push Notifications (OneSignal)
-            </div>
-            <p style="font-size:11px;color:var(--text3);margin-bottom:8px">
-              App ID: <code style="color:var(--accent2);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px">8b464609-3bac-45ac-ab5d-f0f98ea93f32</code>
-            </p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="OneSignalDeferred.push(function(OneSignal) { OneSignal.Slidedown.promptPush(); })">
-                <i class="fa-solid fa-bell"></i> Enable Browser Push (OneSignal)
-              </button>
-              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="testBrowserNotification()">
-                <i class="fa-solid fa-circle-check"></i> Test Local Pop-Up
-              </button>
-            </div>
-          </div>
-
-          <div id="android-native-card" style="background:rgba(110,86,255,0.06);border:1px solid rgba(110,86,255,0.25);border-radius:8px;padding:12px;margin-bottom:14px">
-            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
-              <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent)"></i> 3. Android Mobile Ring Alarm &amp; Notifications
-            </div>
-            <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.4">
-              Native Android AlarmManager rings a loud alarm with vibration at <b>09:00 AM</b> and <b>09:00 PM IST</b> daily, even when the phone is locked or screen is off (0MB background RAM).
-            </p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="triggerAndroidAlarmTest()">
-                <i class="fa-solid fa-bell"></i> ⏰ Test Ring Alarm
-              </button>
-              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="rescheduleAndroidAlarms()">
-                <i class="fa-solid fa-arrows-rotate"></i> Re-Sync Daily Alarms
-              </button>
-            </div>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
-              <i class="fa-brands fa-telegram" style="color:#229ED9"></i> 2. Telegram Messenger Alerts
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Bot Token</label>
-              <input class="s-input" id="tg-bot-token" type="password" placeholder="e.g. 7123456789:AAFn8...">
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Chat ID</label>
-              <input class="s-input" id="tg-chat-id" placeholder="e.g. 123456789">
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Website URL (For Action Buttons)</label>
-              <input class="s-input" id="tg-web-url" placeholder="https://ccfocusboard.netlify.app">
-            </div>
-            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
-              <button class="s-btn primary" onclick="saveTelegramSettings()">
-                <i class="fa-solid fa-floppy-disk"></i> Save Settings
-              </button>
-              <button class="s-btn" style="border:1px solid #229ED9;color:#229ED9" onclick="testTelegramAlert()">
-                <i class="fa-solid fa-paper-plane"></i> Send Test Alert
-              </button>
-            </div>
-            <div id="tg-status-banner" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
-
-            <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.12);border-radius:6px">
-              <div style="font-weight:600;font-size:12px;color:var(--text);margin-bottom:4px">
-                ⚡ 24/7 Free Cloud Cron Trigger URL:
+          <!-- Morning Alarm -->
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
+                <span>🌅</span> Morning Focus Alarm
               </div>
-              <code style="font-size:11px;color:var(--accent2);display:block;word-break:break-all;background:rgba(0,0,0,0.3);padding:4px 6px;border-radius:4px;margin-bottom:6px">
-                https://ccfocusboard.netlify.app/api/notify
-              </code>
-              <p style="font-size:10px;color:var(--text3);margin:0;line-height:1.4">
-                Paste this URL in <a href="https://cron-job.org" target="_blank" style="color:var(--accent)">cron-job.org</a> (Runs every 10 or 15 mins) for 100% automated 24/7 background reminders at 0 cost!
-              </p>
+              <label class="switch-toggle">
+                <input type="checkbox" id="morning-alarm-toggle" checked onchange="saveAlarmSettings()">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <label style="font-size:11px;color:var(--text3)">Alarm Time:</label>
+              <input type="time" id="morning-alarm-time" value="09:00" class="s-input" style="width:auto;padding:4px 8px;font-family:var(--font-mono)" onchange="saveAlarmSettings()">
+            </div>
+          </div>
+
+          <!-- Night Alarm -->
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
+                <span>🌙</span> Night Check-In &amp; Review
+              </div>
+              <label class="switch-toggle">
+                <input type="checkbox" id="night-alarm-toggle" checked onchange="saveAlarmSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <label style="font-size:11px;color:var(--text3)">Alarm Time:</label>
+              <input type="time" id="night-alarm-time" value="21:00" class="s-input" style="width:auto;padding:4px 8px;font-family:var(--font-mono)" onchange="saveAlarmSettings()">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="s-btn primary" onclick="triggerAndroidAlarmTest()">
+              <i class="fa-solid fa-bell"></i> ⏰ Test Ring Alarm Now
+            </button>
+            <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="saveAlarmSettings(true)">
+              <i class="fa-solid fa-arrows-rotate"></i> Re-Sync Alarms
+            </button>
+          </div>
+          <div id="alarm-status-banner" style="font-size:11px;color:var(--text3);margin-top:8px">
+            ⚡ Alarms scheduled natively in Android OS (0 battery drain).
           </div>
         </div>
       </div>
@@ -483,7 +427,30 @@
     </div>
   </div>
 
-  <script src="telegram-sync.js"></script>
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <button class="bnav-btn active" id="bnav-tracker" onclick="switchTab('tracker', this)">
+      <i class="fa-solid fa-calendar-check"></i>
+      <span>Tracker</span>
+    </button>
+    <button class="bnav-btn" id="bnav-tasks" onclick="switchTab('tasks', this)">
+      <i class="fa-solid fa-list-check"></i>
+      <span>Tasks</span>
+    </button>
+    <button class="bnav-btn" id="bnav-calendar" onclick="switchTab('calendar', this)">
+      <i class="fa-solid fa-calendar-days"></i>
+      <span>Calendar</span>
+    </button>
+    <button class="bnav-btn" id="bnav-stats" onclick="switchTab('stats', this)">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Stats</span>
+    </button>
+    <button class="bnav-btn" id="bnav-settings" onclick="switchTab('settings', this)">
+      <i class="fa-solid fa-gear"></i>
+      <span>Settings</span>
+    </button>
+  </nav>
+
   <script src="app.js"></script>
 </body>
 </html>

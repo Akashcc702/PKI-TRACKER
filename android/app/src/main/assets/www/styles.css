@@ -391,11 +391,16 @@ body {
 .habit-table thead th.habit-name-th {
   text-align: left;
   padding-left: 16px;
-  width: 220px;
-  min-width: 180px;
+  width: 200px;
+  min-width: 160px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 1px;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: var(--surface);
+  box-shadow: 2px 0 6px rgba(0,0,0,0.4);
 }
 
 .habit-table thead th.day-th { min-width: 56px; cursor: default; }
@@ -432,6 +437,11 @@ body {
 .habit-table td.name-cell {
   text-align: left;
   padding: 10px 16px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg2);
+  box-shadow: 2px 0 6px rgba(0,0,0,0.4);
 }
 
 .habit-name-text { font-size: 13px; color: var(--text); line-height: 1.4; }
@@ -1273,6 +1283,82 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
 
+/* ===== SWITCH TOGGLE ===== */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.switch-toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  transition: 0.25s;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text3);
+  border-radius: 50%;
+  transition: 0.25s;
+}
+.switch-toggle input:checked + .toggle-slider {
+  background-color: var(--accent);
+  border-color: var(--accent2);
+}
+.switch-toggle input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+  background-color: #fff;
+}
+
+/* ===== MOBILE BOTTOM NAVIGATION ===== */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(13, 14, 26, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  z-index: 95;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bnav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s;
+  flex: 1;
+}
+.bnav-btn i { font-size: 16px; }
+.bnav-btn.active { color: var(--accent2); }
+.bnav-btn.active i { transform: scale(1.15); color: var(--accent); }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
@@ -1290,7 +1376,7 @@ body {
     pointer-events: auto;
   }
   .sidebar-close-btn { display: flex; align-items: center; justify-content: center; }
-  .main-content { margin-left: 0; }
+  .main-content { margin-left: 0; min-width: 0; max-width: 100vw; overflow-x: hidden; }
   .hamburger { display: flex; }
   .score-strip { grid-template-columns: repeat(2,1fr); }
   .tasks-week-grid, .notes-grid { grid-template-columns: repeat(3,1fr); }
@@ -1302,11 +1388,88 @@ body {
   .leaderboard-rank-info { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 500px) {
-  .tab-content { padding: 14px; }
-  .top-bar { padding: 0 14px; gap: 8px; }
-  .score-strip { grid-template-columns: repeat(2,1fr); gap: 8px; }
-  .tasks-week-grid, .notes-grid { grid-template-columns: repeat(2,1fr); }
-  .week-range { min-width: 120px; font-size: 10px; }
-  .share-card-stats { grid-template-columns: 1fr; }
+@media (max-width: 768px) {
+  :root { --topbar-h: 56px; }
+  .mobile-bottom-nav { display: flex; }
+  .main-content {
+    margin-left: 0;
+    min-width: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding-bottom: 70px; /* Leave room for bottom nav */
+  }
+  .tab-content { padding: 12px; }
+  .top-bar {
+    padding: 0 10px;
+    gap: 6px;
+    height: var(--topbar-h);
+  }
+  .top-left { gap: 8px; }
+  .page-title {
+    font-size: 13px;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-right { gap: 6px; }
+  .week-controls { gap: 4px; }
+  .week-btn { width: 28px; height: 28px; font-size: 11px; }
+  .week-range { min-width: 92px; font-size: 9.5px; }
+  .today-btn { padding: 4px 7px; font-size: 8.5px; }
+  .export-btn { padding: 6px 10px; font-size: 12px; }
+  .export-btn span { display: none; }
+  #cloud-sync-badge { padding: 4px 8px !important; }
+  #cloud-sync-badge .hide-mobile { display: none !important; }
+
+  /* Scores */
+  .score-strip { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .score-card { padding: 10px 12px; }
+  .score-card .val { font-size: 20px; }
+  .score-card .lbl { font-size: 10px; }
+
+  /* Habits Table */
+  .habit-table { min-width: 500px; }
+  .habit-table thead th.habit-name-th {
+    width: 125px;
+    min-width: 115px;
+    padding-left: 8px;
+    font-size: 9.5px;
+  }
+  .habit-table td.name-cell {
+    width: 125px;
+    min-width: 115px;
+    padding: 8px;
+  }
+  .habit-name-text { font-size: 11px; line-height: 1.3; font-weight: 600; }
+  .habit-pts-badge { font-size: 8.5px; padding: 0 4px; margin-top: 2px; }
+  .habit-table thead th.day-th { min-width: 42px; padding: 5px 2px; }
+  .day-name-lbl { font-size: 10px; }
+  .day-date-lbl { font-size: 8.5px; }
+  .day-pct-lbl { font-size: 9px; }
+  .cell-btn { width: 33px; height: 33px; border-radius: 8px; font-size: 12px; }
+
+  /* Tasks & Notes */
+  .tasks-week-grid, .notes-grid { grid-template-columns: 1fr; gap: 10px; }
+  .task-day-card { min-width: 0; width: 100%; }
+
+  /* Settings & Stats */
+  .settings-grid { grid-template-columns: 1fr; gap: 14px; }
+  .stats-top-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .charts-row { flex-direction: column; gap: 12px; }
+  .chart-card { padding: 14px; }
+
+  /* Modals */
+  .modal-content { width: 94%; margin: auto; padding: 0; max-height: 85vh; }
+  .popup-content { width: 90%; margin: auto; padding: 24px 16px; }
+}
+
+@media (max-width: 420px) {
+  .page-title { display: none; }
+  .week-range { min-width: 82px; font-size: 9px; }
+  .habit-table thead th.habit-name-th, .habit-table td.name-cell {
+    width: 105px;
+    min-width: 100px;
+  }
+  .quote-ticker { padding: 6px 12px; font-size: 11px; }
 }

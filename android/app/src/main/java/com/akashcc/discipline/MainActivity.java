@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Initialize 9 AM and 9 PM alarms
+        // Initialize 9 AM and 9 PM alarms (or user-saved preferences)
         AlarmHelper.scheduleDailyAlarms(this);
 
         // Initialize WebView
@@ -65,6 +65,13 @@ public class MainActivity extends AppCompatActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setLoadsImagesAutomatically(true);
 
+        // Crucial for proper mobile screen viewport adjustment
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+
         // Hardware acceleration hints
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
@@ -74,18 +81,13 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                if (url.startsWith("file:///android_asset/")) {
-                    return false;
-                }
-                // Allow API calls and external web navigations
                 return false;
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient());
 
-        // Load local bundled web application (0ms offline launch)
+        // Load local bundled web application (0ms 100% offline launch)
         webView.loadUrl("file:///android_asset/www/index.html");
     }
 
@@ -153,13 +155,19 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void testRingAlarm() {
             AlarmHelper.triggerTestAlarm(context);
-            toast("⏰ Ring Alarm triggered! Ringing in 1 second...");
+            toast("⏰ Ring Alarm triggered! Ringing in 1.5 seconds...");
         }
 
         @JavascriptInterface
         public void scheduleAlarms() {
             AlarmHelper.scheduleDailyAlarms(context);
-            toast("✅ Daily 9:00 AM & 9:00 PM alarms registered!");
+            toast("✅ Daily alarms re-synchronized!");
+        }
+
+        @JavascriptInterface
+        public void configureAlarms(int morningHour, int morningMin, boolean morningEnabled, int nightHour, int nightMin, boolean nightEnabled) {
+            AlarmHelper.saveAndScheduleAlarms(context, morningHour, morningMin, morningEnabled, nightHour, nightMin, nightEnabled);
+            toast("✅ Custom alarm schedules saved successfully!");
         }
     }
 }

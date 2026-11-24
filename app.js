@@ -186,14 +186,32 @@ function scheduleCloudPush() {
   cloudSyncTimer = setTimeout(pushToCloud, 800);
 }
 
+function getSyncApiUrl(action) {
+  const origin = window.location.origin;
+  if (origin && origin.startsWith('http') && !origin.includes('localhost')) {
+    return `/api/notify?action=${action}`;
+  }
+  return `https://ccfocusboard.netlify.app/api/notify?action=${action}`;
+}
+
 async function pushToCloud() {
+  if (!navigator.onLine) {
+    updateCloudStatusUI('offline');
+    return;
+  }
   try {
     const payload = getFullTrackerPayload();
-    const res = await fetch('/api/notify?action=push_data', {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+
+    const res = await fetch(getSyncApiUrl('push_data'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'push_data', data: payload })
+      body: JSON.stringify({ action: 'push_data', data: payload }),
+      signal: controller.signal
     });
+    clearTimeout(timer);
+
     const result = await res.json();
     if (result && result.ok) {
       lastCloudUpdatedAt = result.updatedAt || new Date().toISOString();
@@ -203,15 +221,27 @@ async function pushToCloud() {
       updateCloudStatusUI('error');
     }
   } catch (err) {
-    console.warn('Cloud sync push:', err);
+    console.warn('Cloud sync push:', err.message || err);
     updateCloudStatusUI('offline');
   }
 }
 
 async function pullFromCloud(isInitial = false) {
+  if (!navigator.onLine) {
+    updateCloudStatusUI('offline');
+    if (!isInitial && typeof showToast === 'function') {
+      showToast('📱 Offline Mode: Local changes are saved securely.');
+    }
+    return;
+  }
   updateCloudStatusUI('syncing');
   try {
-    const res = await fetch('/api/notify?action=pull_data');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+
+    const res = await fetch(getSyncApiUrl('pull_data'), { signal: controller.signal });
+    clearTimeout(timer);
+
     const result = await res.json();
     if (result && result.ok && result.data) {
       const c = result.data;
@@ -248,7 +278,7 @@ async function pullFromCloud(isInitial = false) {
         checkProgression();
         updateCloudStatusUI('synced');
         if (!isInitial && typeof showToast === 'function') {
-          showToast('☁️ Live sync: Updated from other device!');
+          showToast('☁️ Live sync: Updated from cloud!');
         }
       } else if (hasLocalData && !c.updatedAt) {
         pushToCloud();
@@ -261,7 +291,7 @@ async function pullFromCloud(isInitial = false) {
       else updateCloudStatusUI('synced');
     }
   } catch (err) {
-    console.warn('Cloud sync pull:', err);
+    console.warn('Cloud sync pull:', err.message || err);
     updateCloudStatusUI('offline');
   }
 }
@@ -334,7 +364,6 @@ function cycleStatus(habitId, dateStr) {
 
   renderAll();
   checkProgression();
-  if (window.TelegramSync) window.TelegramSync.onHabitUpdated();
 }
 
 // ── SOUND EFFECTS ─────────────────────────────────────
@@ -1639,7 +1668,7 @@ function renderSettings() {
      Cell notes: ${Object.keys(cellNotes).length}<br>
      Task entries: ${Object.keys(taskData).length} days`;
 
-  if (window.TelegramSync) window.TelegramSync.loadIntoUI();
+  loadAlarmSettings();
 }
 
 function updateHabitField(i, field, val) {
@@ -1831,22 +1860,34 @@ function deleteCellNote() {
 // ── NAVIGATION ────────────────────────────────────────
 function changeWeek(dir) { weekOffset += dir; renderAll(); }
 function goToday()       { weekOffset = 0; renderAll(); }
+function goToToday()     { weekOffset = 0; renderAll(); }
 
 function switchTab(tab, el) {
   activeTab = tab;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  el.classList.add('active');
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+
+  const targetContent = document.getElementById('tab-' + tab);
+  if (targetContent) targetContent.classList.add('active');
+
+  // Highlight both sidebar nav item and bottom nav button
+  const bnavBtn = document.getElementById('bnav-' + tab);
+  if (bnavBtn) bnavBtn.classList.add('active');
+  const sidebarNavBtn = document.querySelector(`.nav-item[onclick*="'${tab}'"]`);
+  if (sidebarNavBtn) sidebarNavBtn.classList.add('active');
 
   const titles = {
     tracker: 'Weekly Tracker', tasks: 'Daily Tasks', calendar: 'Calendar View',
     stats: 'Analytics', achievements: 'Achievements', leaderboard: 'Leaderboard', settings: 'Settings'
   };
-  document.getElementById('page-title').textContent = titles[tab];
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = titles[tab] || 'Daily Discipline';
 
   const weekCtrl = document.getElementById('week-controls');
-  weekCtrl.style.display = (tab === 'tracker' || tab === 'tasks') ? 'flex' : 'none';
+  if (weekCtrl) {
+    weekCtrl.style.display = (tab === 'tracker' || tab === 'tasks') ? 'flex' : 'none';
+  }
 
   if (tab === 'stats') { ['line','doughnut','bar'].forEach(destroyChart); }
 
@@ -1869,6 +1910,87 @@ function toggleSidebar() {
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── NATIVE ALARM & NOTIFICATION MANAGER ──────────────
+function loadAlarmSettings() {
+  const mTime = localStorage.getItem('ddt_morning_time') || '09:00';
+  const mEnabled = localStorage.getItem('ddt_morning_enabled') !== 'false';
+  const nTime = localStorage.getItem('ddt_night_time') || '21:00';
+  const nEnabled = localStorage.getItem('ddt_night_enabled') !== 'false';
+
+  const mInput = document.getElementById('morning-alarm-time');
+  const mToggle = document.getElementById('morning-alarm-toggle');
+  const nInput = document.getElementById('night-alarm-time');
+  const nToggle = document.getElementById('night-alarm-toggle');
+
+  if (mInput) mInput.value = mTime;
+  if (mToggle) mToggle.checked = mEnabled;
+  if (nInput) nInput.value = nTime;
+  if (nToggle) nToggle.checked = nEnabled;
+}
+
+function saveAlarmSettings(showFeedback = false) {
+  const mInput = document.getElementById('morning-alarm-time');
+  const mToggle = document.getElementById('morning-alarm-toggle');
+  const nInput = document.getElementById('night-alarm-time');
+  const nToggle = document.getElementById('night-alarm-toggle');
+
+  const mTime = mInput ? mInput.value : '09:00';
+  const mEnabled = mToggle ? mToggle.checked : true;
+  const nTime = nInput ? nInput.value : '21:00';
+  const nEnabled = nToggle ? nToggle.checked : true;
+
+  localStorage.setItem('ddt_morning_time', mTime);
+  localStorage.setItem('ddt_morning_enabled', mEnabled);
+  localStorage.setItem('ddt_night_time', nTime);
+  localStorage.setItem('ddt_night_enabled', nEnabled);
+
+  const [mHour, mMin] = mTime.split(':').map(Number);
+  const [nHour, nMin] = nTime.split(':').map(Number);
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.configureAlarms === 'function') {
+    window.AndroidBridge.configureAlarms(mHour, mMin, mEnabled, nHour, nMin, nEnabled);
+  } else if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarms === 'function') {
+    window.AndroidBridge.scheduleAlarms();
+  }
+
+  const banner = document.getElementById('alarm-status-banner');
+  if (banner) {
+    banner.textContent = `✅ Alarms updated: Morning ${mTime} (${mEnabled ? 'ON' : 'OFF'}), Night ${nTime} (${nEnabled ? 'ON' : 'OFF'})`;
+    banner.style.color = '#10b981';
+  }
+
+  if (showFeedback && typeof showToast === 'function') {
+    showToast('🔔 Alarms successfully updated and scheduled!');
+  }
+}
+
+function triggerAndroidAlarmTest() {
+  if (window.AndroidBridge && typeof window.AndroidBridge.testRingAlarm === 'function') {
+    window.AndroidBridge.testRingAlarm();
+  } else {
+    // Web fallback test audio chime
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch {}
+    if (typeof showToast === 'function') {
+      showToast('⏰ Test Alarm ringing (Web Audio / Chime)');
+    }
+  }
+}
+
+function rescheduleAndroidAlarms() {
+  saveAlarmSettings(true);
+}
 
 // ── KEYBOARD SHORTCUTS ────────────────────────────────
 document.addEventListener('keydown', e => {
@@ -1902,12 +2024,16 @@ document.addEventListener('keydown', e => {
 setQuote();
 renderAll();
 checkProgression();
+loadAlarmSettings();
 fakeCompetitors = generateFakeCompetitors();
 
 // ── CLOUD SYNC INITIALIZATION ─────────────────────────
 if (typeof window !== 'undefined') {
   window.pullFromCloud = pullFromCloud;
   window.pushToCloud = pushToCloud;
+  window.saveAlarmSettings = saveAlarmSettings;
+  window.triggerAndroidAlarmTest = triggerAndroidAlarmTest;
+  window.rescheduleAndroidAlarms = rescheduleAndroidAlarms;
   
   // Auto-sync when tab becomes visible (e.g. switching from mobile to laptop)
   document.addEventListener('visibilitychange', () => {
@@ -1918,20 +2044,4 @@ if (typeof window !== 'undefined') {
 
   // Pull latest cloud data on initial load
   setTimeout(() => pullFromCloud(true), 300);
-}
-
-function triggerAndroidAlarmTest() {
-  if (window.AndroidBridge && typeof window.AndroidBridge.testRingAlarm === 'function') {
-    window.AndroidBridge.testRingAlarm();
-  } else {
-    showToast('⚠️ Web Mode: Install Daily Discipline APK to test Ring Alarm.');
-  }
-}
-
-function rescheduleAndroidAlarms() {
-  if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarms === 'function') {
-    window.AndroidBridge.scheduleAlarms();
-  } else {
-    showToast('⚠️ Daily alarms run automatically inside the Daily Discipline Mobile App.');
-  }
 }
