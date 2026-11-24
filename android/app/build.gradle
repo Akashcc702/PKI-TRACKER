@@ -16,6 +16,12 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        debug {
+            // Android SDK provides standard debug keystore
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false

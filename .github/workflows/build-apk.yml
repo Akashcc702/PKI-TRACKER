@@ -24,16 +24,25 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build Android APK
         run: |
           cd android
-          gradle assembleRelease --stacktrace
+          gradle assembleRelease assembleDebug --stacktrace
 
       - name: Prepare APK Output
         run: |
           mkdir -p output_apk
-          cp android/app/build/outputs/apk/release/app-release.apk output_apk/DailyDiscipline.apk
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk output_apk/DailyDiscipline.apk
+          elif [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk output_apk/DailyDiscipline.apk
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
