@@ -66,15 +66,19 @@ body {
   position: fixed;
   left: 0; top: 0; bottom: 0;
   z-index: 100;
+  overflow-x: hidden;
   transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
 }
 
 .sidebar-logo {
-  padding: 24px 20px 20px;
+  padding: 20px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
   border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .logo-icon {
@@ -1272,8 +1276,19 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
-  .sidebar { transform: translateX(-220px); width: 220px; }
-  .sidebar.open { transform: translateX(0); }
+  .sidebar {
+    transform: translateX(-220px);
+    width: 220px;
+    box-sizing: border-box;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), visibility 0.28s;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
   .sidebar-close-btn { display: flex; align-items: center; justify-content: center; }
   .main-content { margin-left: 0; }
   .hamburger { display: flex; }
