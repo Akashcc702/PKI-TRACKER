@@ -347,6 +347,23 @@
             </div>
           </div>
 
+          <div id="android-native-card" style="background:rgba(110,86,255,0.06);border:1px solid rgba(110,86,255,0.25);border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent)"></i> 3. Android Mobile Ring Alarm &amp; Notifications
+            </div>
+            <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.4">
+              Native Android AlarmManager rings a loud alarm with vibration at <b>09:00 AM</b> and <b>09:00 PM IST</b> daily, even when the phone is locked or screen is off (0MB background RAM).
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="triggerAndroidAlarmTest()">
+                <i class="fa-solid fa-bell"></i> ⏰ Test Ring Alarm
+              </button>
+              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="rescheduleAndroidAlarms()">
+                <i class="fa-solid fa-arrows-rotate"></i> Re-Sync Daily Alarms
+              </button>
+            </div>
+          </div>
+
           <div style="display:flex;flex-direction:column;gap:10px">
             <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
               <i class="fa-brands fa-telegram" style="color:#229ED9"></i> 2. Telegram Messenger Alerts

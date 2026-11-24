@@ -314,6 +314,11 @@ function cycleStatus(habitId, dateStr) {
   const cur  = cellData[key] || 'none';
   const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length];
   cellData[key] = next;
+
+  // Native haptic feedback
+  if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
+    window.AndroidBridge.vibrate(35);
+  }
   save('ddt_data', cellData);
 
   if (soundEnabled) playToggleSound(next);
@@ -1913,4 +1918,20 @@ if (typeof window !== 'undefined') {
 
   // Pull latest cloud data on initial load
   setTimeout(() => pullFromCloud(true), 300);
+}
+
+function triggerAndroidAlarmTest() {
+  if (window.AndroidBridge && typeof window.AndroidBridge.testRingAlarm === 'function') {
+    window.AndroidBridge.testRingAlarm();
+  } else {
+    showToast('⚠️ Web Mode: Install Daily Discipline APK to test Ring Alarm.');
+  }
+}
+
+function rescheduleAndroidAlarms() {
+  if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarms === 'function') {
+    window.AndroidBridge.scheduleAlarms();
+  } else {
+    showToast('⚠️ Daily alarms run automatically inside the Daily Discipline Mobile App.');
+  }
 }

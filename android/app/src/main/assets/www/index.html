@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Discipline Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <!-- OneSignal Web Push SDK -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.init({
+          appId: "8b464609-3bac-45ac-ab5d-f0f98ea93f32",
+          serviceWorkerParam: { scope: "/" },
+          serviceWorkerPath: "OneSignalSDKWorker.js",
+          notifyButton: {
+            enable: true
+          },
+          allowLocalhostAsSecureOrigin: true
+        });
+        try {
+          OneSignal.Slidedown.promptPush();
+        } catch (err) {
+          console.warn("OneSignal prompt notice:", err);
+        }
+      } catch (err) {
+        console.warn("OneSignal initialization notice (restricted origin):", err.message || err);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="noise-overlay"></div>
+  <div class="grid-bg"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="logo-icon">🔥</span>
+        <span class="logo-text">DISCIPLINE</span>
+      </div>
+      <button class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close Sidebar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="switchTab('tracker', this)">
+        <i class="fa-solid fa-calendar-check"></i> Daily Tracker
+      </button>
+      <button class="nav-item" onclick="switchTab('tasks', this)">
+        <i class="fa-solid fa-list-check"></i> Daily Tasks
+      </button>
+      <button class="nav-item" onclick="switchTab('calendar', this)">
+        <i class="fa-solid fa-calendar-days"></i> Calendar
+      </button>
+      <button class="nav-item" onclick="switchTab('stats', this)">
+        <i class="fa-solid fa-chart-line"></i> Analytics
+      </button>
+      <button class="nav-item" onclick="switchTab('achievements', this)">
+        <i class="fa-solid fa-trophy"></i> Achievements
+      </button>
+      <button class="nav-item" onclick="switchTab('leaderboard', this)">
+        <i class="fa-solid fa-ranking-star"></i> Leaderboard
+      </button>
+      <button class="nav-item" onclick="switchTab('settings', this)">
+        <i class="fa-solid fa-gear"></i> Settings
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-streak">
+        <span class="streak-fire">🔥</span>
+        <div>
+          <div class="streak-num" id="streak-num">0</div>
+          <div class="streak-lbl">day streak</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <main class="main-content">
+    <header class="top-bar">
+      <div class="top-left">
+        <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1 class="page-title" id="page-title">Weekly Tracker</h1>
+      </div>
+      <div class="top-right" style="display:flex;align-items:center;gap:12px">
+        <div id="cloud-sync-badge" onclick="pullFromCloud(false)" style="display:inline-flex;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.06);border-radius:20px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;user-select:none" title="Click to sync with cloud">
+          <i class="fa-solid fa-cloud" style="color:var(--text3)"></i> <span class="hide-mobile" style="font-size:11px;color:var(--text3);margin-left:5px;font-weight:600">Connecting...</span>
+        </div>
+        <div class="week-controls" id="week-controls">
+          <button class="week-btn" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+          <span class="week-range" id="week-range">This Week</span>
+          <button class="week-btn" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          <button class="today-btn" onclick="goToday()">TODAY</button>
+        </div>
+        <button class="export-btn" onclick="showWeeklyReport()"><i class="fa-solid fa-file-lines"></i> <span>Report</span></button>
+        <button class="export-btn" onclick="openShareModal()"><i class="fa-solid fa-share-nodes"></i> <span>Share</span></button>
+        <button class="export-btn" onclick="exportCSV()"><i class="fa-solid fa-download"></i> <span>Export</span></button>
+      </div>
+    </header>
+
+    <div class="quote-ticker" id="quote-ticker">"Discipline is the bridge between goals and accomplishment."</div>
+
+    <div style="padding:12px 24px;background:rgba(110,86,255,0.08);border-bottom:1px solid rgba(110,86,255,0.15)">
+      <div style="display:flex;align-items:center;gap:12px;max-width:400px">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--font-mono);color:#fff" id="xp-level-badge">Lv.1</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--text2)" id="xp-level-name">Novice</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent2)"><span id="xp-current">0</span> / <span id="xp-next">100</span> XP</span>
+          </div>
+          <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden">
+            <div id="xp-bar-fill" style="height:100%;background:var(--accent);width:0%;transition:width 0.3s"></div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px">Total: <span id="xp-total" style="color:var(--text)">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-tracker" class="tab-content active">
+      <div class="score-strip" id="score-strip"></div>
+      <div class="grid-container">
+        <div class="grid-scroll-hint"><i class="fa-solid fa-arrow-right"></i> Scroll to see all days</div>
+        <div class="table-wrap">
+          <table class="habit-table" id="habit-table"></table>
+        </div>
+        <div class="legend-bar">
+          <div class="legend-item"><span class="leg-dot green"></span> Done — Full points</div>
+          <div class="legend-item"><span class="leg-dot amber"></span> Partial — Half points</div>
+          <div class="legend-item"><span class="leg-dot red"></span> Skipped — 0 points</div>
+          <div class="legend-item"><span class="leg-dot none"></span> Not marked</div>
+          <div class="legend-hint">Left-click to cycle • Right-click to add note • <span style="color:var(--amber);font-weight:600"> Only TODAY editable</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-tasks" class="tab-content">
+      <div class="tasks-header">
+        <h2 class="section-heading">5 Daily Achieve Tasks</h2>
+        <p class="section-sub">Track your 5 most important tasks for each day this week</p>
+      </div>
+      <div class="tasks-week-grid" id="tasks-week-grid"></div>
+      <div class="notes-section">
+        <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">Daily Journal Notes</h3>
+        <p class="section-sub" style="margin-bottom:12px">Reflect on your day</p>
+        <div class="notes-grid" id="notes-grid"></div>
+      </div>
+    </div>
+
+    <div id="tab-calendar" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div>
+          <h2 class="section-heading" id="calendar-month-label">Calendar</h2>
+          <p class="section-sub">Visual overview of your activity</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="s-btn primary" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+          <button class="s-btn primary" onclick="goCalendarToday()">Today</button>
+          <button class="s-btn primary" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="cal-grid" id="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px"></div>
+        <div style="margin-top:20px;padding:16px;background:var(--bg3);border-radius:var(--radius)" id="calendar-day-detail">
+          <div style="color:var(--text3);font-style:italic">Click any day to see detailed breakdown</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-stats" class="tab-content">
+      <div class="stats-top-cards" id="stats-top-cards"></div>
+      <div style="margin-bottom:20px">
+        <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">
+          <i class="fa-solid fa-robot" style="color:var(--accent2);margin-right:6px"></i> AI Coach
+        </h3>
+        <p class="section-sub" style="margin-bottom:12px">Personalized insights based on your last 30 days of data</p>
+        <div id="ai-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
+      </div>
+      <div style="margin-bottom:20px">
+        <h3 style="font-family:var(--font-display);font-size:13px;color:var(--text);margin-bottom:12px">
+          <i class="fa-solid fa-brain" style="color:var(--accent2);margin-right:6px"></i> Smart Patterns
+        </h3>
+        <p class="section-sub" style="margin-bottom:12px">Auto-detected patterns from your data</p>
+        <div id="pattern-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-title">Weekly Performance (Last 8 Weeks)</div>
+          <canvas id="line-chart"></canvas>
+        </div>
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-title">This Week Breakdown</div>
+          <canvas id="doughnut-chart"></canvas>
+        </div>
+      </div>
+      <div class="charts-row" style="margin-top:16px">
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-title">Habit Completion Rate — Last 30 Days</div>
+          <canvas id="bar-chart"></canvas>
+        </div>
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-title">90-Day Activity Heatmap</div>
+          <div class="heatmap-container" id="heatmap-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-achievements" class="tab-content">
+      <div style="margin-bottom:20px">
+        <h2 class="section-heading"> Achievements</h2>
+        <p class="section-sub" id="ach-progress-label">0 / 25 unlocked</p>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">Journey to 10,000 days of discipline — earn through hard work!</p>
+      </div>
+      <div class="ach-grid" id="ach-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+    </div>
+
+    <div id="tab-leaderboard" class="tab-content">
+      <div class="leaderboard-container">
+        <div class="leaderboard-header">
+          <h2 class="section-heading">🌍 Global Leaderboard</h2>
+          <p class="section-sub">Compete with others and climb the ranks!</p>
+        </div>
+        <div class="leaderboard-filters">
+          <button class="lb-filter-btn active" onclick="setLeaderboardPeriod('weekly', this)">This Week</button>
+          <button class="lb-filter-btn" onclick="setLeaderboardPeriod('monthly', this)">This Month</button>
+          <button class="lb-filter-btn" onclick="setLeaderboardPeriod('alltime', this)">All Time</button>
+        </div>
+        <div class="leaderboard-rank-info">
+          <div class="rank-card">
+            <div class="rank-icon"></div>
+            <div class="rank-details">
+              <div class="rank-label">Your Rank</div>
+              <div class="rank-value" id="user-rank">#--</div>
+              <div class="rank-change" id="rank-change">--</div>
+            </div>
+          </div>
+          <div class="rank-card">
+            <div class="rank-icon">🎯</div>
+            <div class="rank-details">
+              <div class="rank-label">To Top 10</div>
+              <div class="rank-value" id="xp-needed">-- XP</div>
+              <div class="rank-change">needed</div>
+            </div>
+          </div>
+          <div class="rank-card">
+            <div class="rank-icon">🔥</div>
+            <div class="rank-details">
+              <div class="rank-label">Competitors</div>
+              <div class="rank-value" id="total-competitors">50</div>
+              <div class="rank-change">active</div>
+            </div>
+          </div>
+        </div>
+        <div class="leaderboard-list" id="leaderboard-list"></div>
+        <div class="leaderboard-refresh">
+          <button class="s-btn primary" onclick="refreshLeaderboard()">
+            <i class="fa-solid fa-rotate"></i> Refresh Rankings
+          </button>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">
+            * Rankings update every hour. Fake competitors simulate real competition!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-settings" class="tab-content">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="settings-card-title">
+            <i class="fa-solid fa-list-check"></i> Manage Habits
+          </div>
+          <div id="habits-edit-list"></div>
+          <div class="add-habit-form">
+            <input class="s-input" id="new-habit-name" placeholder="New habit name...">
+            <input class="s-input pts-input" id="new-habit-pts" type="number" value="3" min="1" max="10" placeholder="Pts">
+            <button class="s-btn primary" onclick="addHabit()">
+              <i class="fa-solid fa-plus"></i> Add
+            </button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title">
+            <i class="fa-solid fa-database"></i> Data Management
+          </div>
+          <div class="data-actions">
+            <button class="s-btn primary" onclick="exportCSV()">
+              <i class="fa-solid fa-file-csv"></i> Export This Week CSV
+            </button>
+            <button class="s-btn primary" onclick="exportAllCSV()">
+              <i class="fa-solid fa-file-csv"></i> Export All Data CSV
+            </button>
+            <button class="s-btn primary" onclick="document.getElementById('import-csv').click()">
+              <i class="fa-solid fa-upload"></i> Import CSV
+            </button>
+            <input type="file" id="import-csv" accept=".csv" style="display:none" onchange="importCSV(event)">
+            <button class="s-btn primary" onclick="showWeeklyReport()">
+              <i class="fa-solid fa-file-lines"></i> Generate Weekly Report
+            </button>
+            <button class="s-btn primary" onclick="pullFromCloud(false)" style="border:1px solid var(--accent);background:rgba(99,102,241,0.15)">
+              <i class="fa-solid fa-cloud-arrow-down" style="color:var(--accent2)"></i> Sync from Cloud Now (Mobile/PC)
+            </button>
+            <button class="s-btn primary" onclick="pushToCloud()" style="border:1px solid #10b981;background:rgba(16,185,129,0.15)">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:#10b981"></i> Force Upload to Cloud
+            </button>
+            <button class="s-btn danger" onclick="resetWeek()">
+              <i class="fa-solid fa-rotate-left"></i> Reset This Week
+            </button>
+            <button class="s-btn danger" onclick="clearAllData()">
+              <i class="fa-solid fa-trash"></i> Clear All Data
+            </button>
+          </div>
+          <div class="data-info" id="data-info"></div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title">
+            <i class="fa-solid fa-bell" style="color:var(--accent)"></i> Smart Notifications (OneSignal + Telegram)
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">
+            Automated notifications active on both <b>Direct Browser Push</b> and <b>Telegram</b>:<br>
+            • <b>09:00 AM – 10:00 AM</b>: Open website reminder (every 10m until opened)<br>
+            • <b>09:00 PM onwards</b>: Unfilled activity reminder (every 10m until filled)
+          </p>
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <i class="fa-solid fa-globe" style="color:#e11d48"></i> 1. Direct Browser Push Notifications (OneSignal)
+            </div>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:8px">
+              App ID: <code style="color:var(--accent2);background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px">8b464609-3bac-45ac-ab5d-f0f98ea93f32</code>
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="OneSignalDeferred.push(function(OneSignal) { OneSignal.Slidedown.promptPush(); })">
+                <i class="fa-solid fa-bell"></i> Enable Browser Push (OneSignal)
+              </button>
+              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="testBrowserNotification()">
+                <i class="fa-solid fa-circle-check"></i> Test Local Pop-Up
+              </button>
+            </div>
+          </div>
+
+          <div id="android-native-card" style="background:rgba(110,86,255,0.06);border:1px solid rgba(110,86,255,0.25);border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent)"></i> 3. Android Mobile Ring Alarm &amp; Notifications
+            </div>
+            <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.4">
+              Native Android AlarmManager rings a loud alarm with vibration at <b>09:00 AM</b> and <b>09:00 PM IST</b> daily, even when the phone is locked or screen is off (0MB background RAM).
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="s-btn" style="border:1px solid var(--accent);color:var(--accent)" onclick="triggerAndroidAlarmTest()">
+                <i class="fa-solid fa-bell"></i> ⏰ Test Ring Alarm
+              </button>
+              <button class="s-btn" style="border:1px solid #10b981;color:#10b981" onclick="rescheduleAndroidAlarms()">
+                <i class="fa-solid fa-arrows-rotate"></i> Re-Sync Daily Alarms
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-weight:600;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
+              <i class="fa-brands fa-telegram" style="color:#229ED9"></i> 2. Telegram Messenger Alerts
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Bot Token</label>
+              <input class="s-input" id="tg-bot-token" type="password" placeholder="e.g. 7123456789:AAFn8...">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telegram Chat ID</label>
+              <input class="s-input" id="tg-chat-id" placeholder="e.g. 123456789">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Website URL (For Action Buttons)</label>
+              <input class="s-input" id="tg-web-url" placeholder="https://ccfocusboard.netlify.app">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+              <button class="s-btn primary" onclick="saveTelegramSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> Save Settings
+              </button>
+              <button class="s-btn" style="border:1px solid #229ED9;color:#229ED9" onclick="testTelegramAlert()">
+                <i class="fa-solid fa-paper-plane"></i> Send Test Alert
+              </button>
+            </div>
+            <div id="tg-status-banner" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+
+            <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.12);border-radius:6px">
+              <div style="font-weight:600;font-size:12px;color:var(--text);margin-bottom:4px">
+                ⚡ 24/7 Free Cloud Cron Trigger URL:
+              </div>
+              <code style="font-size:11px;color:var(--accent2);display:block;word-break:break-all;background:rgba(0,0,0,0.3);padding:4px 6px;border-radius:4px;margin-bottom:6px">
+                https://ccfocusboard.netlify.app/api/notify
+              </code>
+              <p style="font-size:10px;color:var(--text3);margin:0;line-height:1.4">
+                Paste this URL in <a href="https://cron-job.org" target="_blank" style="color:var(--accent)">cron-job.org</a> (Runs every 10 or 15 mins) for 100% automated 24/7 background reminders at 0 cost!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="popup ach-popup" id="ach-popup">
+    <div class="popup-content">
+      <div class="ach-popup-icon" id="ach-popup-icon">🏆</div>
+      <h3 class="ach-popup-name" id="ach-popup-name">Achievement Unlocked!</h3>
+      <p class="ach-popup-desc" id="ach-popup-desc">Awesome!</p>
+      <button class="s-btn primary" onclick="closeAchPopup()" style="margin-top:16px">Awesome!</button>
+    </div>
+  </div>
+
+  <div class="popup levelup-popup" id="levelup-popup">
+    <div class="popup-content">
+      <div class="levelup-icon">⭐</div>
+      <h3 class="levelup-title">LEVEL UP!</h3>
+      <div class="levelup-num" id="levelup-num">Lv.2</div>
+      <div class="levelup-name" id="levelup-name">Beginner</div>
+      <button class="s-btn primary" onclick="closeLevelUpPopup()" style="margin-top:16px">Let's go!</button>
+    </div>
+  </div>
+
+  <div class="popup note-popup" id="note-popup">
+    <div class="popup-content">
+      <h3 class="note-popup-title" id="note-popup-title">Note</h3>
+      <textarea class="note-popup-text" id="note-popup-text" rows="4" placeholder="Add a note..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="s-btn danger" onclick="deleteCellNote()" style="flex:1">Delete</button>
+        <button class="s-btn primary" onclick="saveCellNote()" style="flex:2">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="report-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📊 Weekly Report</h3>
+        <span class="report-period" id="report-period">—</span>
+        <button class="modal-close" onclick="closeModal('report-modal')">×</button>
+      </div>
+      <div class="modal-body" id="report-content"></div>
+      <div class="modal-footer">
+        <button class="s-btn primary" onclick="copyReport()"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button class="s-btn primary" onclick="downloadReport()"><i class="fa-solid fa-download"></i> Download .md</button>
+        <button class="s-btn" onclick="closeModal('report-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="share-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📤 Share Your Progress</h3>
+        <span>Generate a beautiful image to share</span>
+        <button class="modal-close" onclick="closeModal('share-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="share-card" id="share-card">
+          <div class="share-card-header">
+            <span class="share-card-logo">🔥</span>
+            <div>
+              <div class="share-card-title">DISCIPLINE</div>
+              <div class="share-card-subtitle">Building discipline, one day at a time</div>
+            </div>
+          </div>
+          <div class="share-card-date" id="share-card-date"></div>
+          <div class="share-card-stats" id="share-card-stats"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="s-btn primary" onclick="downloadShareImage()"><i class="fa-solid fa-download"></i> Download PNG</button>
+        <button class="s-btn primary" id="native-share-btn" onclick="nativeShare()"><i class="fa-solid fa-share-nodes"></i> Share</button>
+        <button class="s-btn" onclick="closeModal('share-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="telegram-sync.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
