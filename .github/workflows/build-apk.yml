@@ -30,10 +30,13 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
+      - name: Generate local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
       - name: Build Android APK
         run: |
           cd android
-          gradle assembleRelease assembleDebug --stacktrace
+          gradle assembleDebug --stacktrace
 
       - name: Prepare APK Output
         run: |
